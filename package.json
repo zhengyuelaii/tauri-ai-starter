@@ -9,7 +9,8 @@
     "tauri:dev": "pnpm --filter @tauri-monorepo/desktop tauri dev",
     "server:dev": "pnpm --filter @tauri-monorepo/server start:dev",
     "server:build": "pnpm --filter @tauri-monorepo/server build",
-    "server:test": "pnpm --filter @tauri-monorepo/server test"
+    "server:test": "pnpm --filter @tauri-monorepo/server test",
+    "desktop:test": "pnpm --filter @tauri-monorepo/desktop test"
   },
   "keywords": [],
   "author": "",
