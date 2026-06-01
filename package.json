@@ -1,0 +1,25 @@
+{
+  "name": "tauri-monorepo-app",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "tauri": "pnpm --filter @tauri-monorepo/desktop tauri",
+    "tauri:dev": "pnpm --filter @tauri-monorepo/desktop tauri dev",
+    "server:dev": "pnpm --filter @tauri-monorepo/server start:dev",
+    "server:build": "pnpm --filter @tauri-monorepo/server build",
+    "server:test": "pnpm --filter @tauri-monorepo/server test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.4.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module"
+}
