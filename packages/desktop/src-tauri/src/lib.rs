@@ -19,7 +19,10 @@ pub fn run() {
             match app.shell().sidecar("binaries/server") {
                 Ok(sidecar_command) => match sidecar_command.spawn() {
                     Ok((mut rx, child)) => {
-                        *app.state::<ServerProcess>().0.lock().unwrap() = Some(child);
+                        *app.state::<ServerProcess>()
+                            .0
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner()) = Some(child);
 
                         tauri::async_runtime::spawn(async move {
                             while let Some(event) = rx.recv().await {
@@ -39,10 +42,7 @@ pub fn run() {
                         });
                     }
                     Err(e) => {
-                        eprintln!(
-                            "[server] sidecar binary not found: {} (dev mode, skipping)",
-                            e
-                        );
+                        eprintln!("[server] failed to spawn sidecar binary: {}", e);
                     }
                 },
                 Err(e) => {
@@ -59,7 +59,12 @@ pub fn run() {
     app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit = event {
             if let Some(state) = app_handle.try_state::<ServerProcess>() {
-                if let Some(child) = state.0.lock().unwrap().take() {
+                if let Some(child) = state
+                    .0
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .take()
+                {
                     let _ = child.kill();
                 }
             }

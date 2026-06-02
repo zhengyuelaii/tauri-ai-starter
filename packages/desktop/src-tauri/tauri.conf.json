@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "io.github.zhengyuelaii.desktop",
   "build": {
-    "beforeDevCommand": "pnpm --filter @tauri-monorepo/shared build && (trap 'kill 0' EXIT; pnpm dev & pnpm --filter @tauri-monorepo/server start:dev & wait)",
+    "beforeDevCommand": "pnpm --filter @tauri-monorepo/shared build && node scripts/dev.cjs",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm --filter @tauri-monorepo/server build:sidecar && pnpm build",
     "frontendDist": "../dist"

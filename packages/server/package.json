@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:sidecar": "pnpm --filter @tauri-monorepo/shared build && tsc --project tsconfig.build.json --incremental false && pkg dist/main.js --targets node22-macos-arm64 --output dist-binary/server && node scripts/move-sidecar.js",
+    "build:sidecar": "pnpm --filter @tauri-monorepo/shared build && tsc --project tsconfig.build.json --incremental false && node scripts/build-sidecar.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

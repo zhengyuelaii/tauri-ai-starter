@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted } from "vue";
 
 type Status = "loading" | "connected" | "disconnected";
 
@@ -7,19 +7,20 @@ const status = ref<Status>("loading");
 const serverVersion = ref("");
 const serverTimestamp = ref("");
 const errorMessage = ref("");
-let controller: AbortController | null = null;
 
-onMounted(() => {
-  controller = new AbortController();
-  const timeoutId = setTimeout(() => controller!.abort(), 5000);
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
 
+onMounted(async () => {
   const healthUrl = import.meta.env.DEV
     ? "/health"
-    : "http://localhost:3000/health";
+    : `http://localhost:${__SERVER_PORT__}/health`;
 
-  fetch(healthUrl, { signal: controller.signal })
-    .then(async (res) => {
-      clearTimeout(timeoutId);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(healthUrl, {
+        signal: AbortSignal.timeout(5000),
+      });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -27,20 +28,22 @@ onMounted(() => {
       status.value = "connected";
       serverVersion.value = data.version;
       serverTimestamp.value = data.timestamp;
-    })
-    .catch((e: unknown) => {
-      if (e instanceof DOMException && e.name === "AbortError") {
+      return;
+    } catch (e: unknown) {
+      if (attempt === MAX_RETRIES - 1) {
         status.value = "disconnected";
-        errorMessage.value = "连接超时";
-        return;
+        if (e instanceof DOMException && e.name === "TimeoutError") {
+          errorMessage.value = "连接超时";
+        } else if (e instanceof Error) {
+          errorMessage.value = e.message;
+        } else {
+          errorMessage.value = "未知错误";
+        }
+      } else {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       }
-      status.value = "disconnected";
-      errorMessage.value = e instanceof Error ? e.message : "未知错误";
-    });
-});
-
-onBeforeUnmount(() => {
-  controller?.abort();
+    }
+  }
 });
 </script>
 

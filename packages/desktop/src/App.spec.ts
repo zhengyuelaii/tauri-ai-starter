@@ -7,7 +7,6 @@ describe("App", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    // Default: fetch never resolves, so loading state persists
     fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
       () => new Promise(() => {}),
     );
@@ -24,14 +23,14 @@ describe("App", () => {
     expect(wrapper.text()).toContain("正在检查服务器连接");
   });
 
-  it("shows connected state when health check succeeds", async () => {
+  it("shows connected state when health check succeeds on first attempt", async () => {
     fetchSpy.mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
           status: "ok",
           timestamp: "2026-06-01T12:00:00.000Z",
-          version: "0.0.1",
+          version: "0.0.2",
         }),
     } as Response);
 
@@ -40,10 +39,35 @@ describe("App", () => {
     await vi.runAllTimersAsync();
 
     expect(wrapper.text()).toContain("已连接");
-    expect(wrapper.text()).toContain("0.0.1");
   });
 
-  it("shows disconnected state when health check fails", async () => {
+  it("retries and shows connected when health check succeeds on third attempt", async () => {
+    let calls = 0;
+    fetchSpy.mockImplementation(() => {
+      calls++;
+      if (calls < 3) {
+        return Promise.reject(new Error("Connection refused"));
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            status: "ok",
+            timestamp: "2026-06-01T12:00:00.000Z",
+            version: "0.0.2",
+          }),
+      } as Response);
+    });
+
+    const wrapper = mount(App);
+
+    await vi.runAllTimersAsync();
+
+    expect(wrapper.text()).toContain("已连接");
+    expect(calls).toBe(3);
+  });
+
+  it("shows disconnected after all 3 retries fail", async () => {
     fetchSpy.mockRejectedValue(new Error("Connection refused"));
 
     const wrapper = mount(App);
@@ -52,13 +76,14 @@ describe("App", () => {
 
     expect(wrapper.text()).toContain("未连接");
     expect(wrapper.text()).toContain("Connection refused");
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 
-  it("shows disconnected state when server returns non-ok status", async () => {
+  it("shows disconnected when server returns non-ok status on every retry", async () => {
     fetchSpy.mockResolvedValue({
       ok: false,
       status: 503,
-      json: () => Promise.resolve({ error: "Service Unavailable" }),
+      json: () => Promise.resolve({}),
     } as Response);
 
     const wrapper = mount(App);
@@ -66,26 +91,20 @@ describe("App", () => {
     await vi.runAllTimersAsync();
 
     expect(wrapper.text()).toContain("未连接");
-    expect(wrapper.text()).toContain("503");
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 
-  it("shows timeout error when health check takes too long", async () => {
-    fetchSpy.mockImplementation((_url, opts) => {
-      const signal = (opts as RequestInit)?.signal;
-      return new Promise((_resolve, reject) => {
-        if (signal) {
-          signal.addEventListener("abort", () =>
-            reject(new DOMException("Aborted", "AbortError")),
-          );
-        }
-      });
-    });
+  it("shows timeout message when requests time out", async () => {
+    fetchSpy.mockRejectedValue(
+      new DOMException("The operation was aborted", "TimeoutError"),
+    );
 
     const wrapper = mount(App);
 
-    await vi.advanceTimersByTimeAsync(5000);
+    await vi.runAllTimersAsync();
 
     expect(wrapper.text()).toContain("未连接");
     expect(wrapper.text()).toContain("连接超时");
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 });

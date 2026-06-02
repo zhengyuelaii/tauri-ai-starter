@@ -5,6 +5,7 @@ import path from "path";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
+const SERVER_PORT = process.env.SERVER_PORT ?? "3000";
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
@@ -15,6 +16,10 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
       "@tauri-monorepo/shared": path.resolve(__dirname, "../../shared/src/index.ts"),
     },
+  },
+
+  define: {
+    __SERVER_PORT__: JSON.stringify(SERVER_PORT),
   },
 
   clearScreen: false,
@@ -34,7 +39,7 @@ export default defineConfig(() => ({
       ignored: ["**/src-tauri/**"],
     },
     proxy: {
-      "/health": "http://localhost:3000",
+      "/health": `http://localhost:${SERVER_PORT}`,
     },
   },
 
