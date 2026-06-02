@@ -1,78 +1,260 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { Chat } from '@ai-sdk/vue';
+import { DefaultChatTransport } from 'ai';
+import { ref, watch, nextTick, computed, onMounted } from 'vue';
+import ChatStatus from './components/ChatStatus.vue';
+import ChatMessage from './components/ChatMessage.vue';
+import ChatInput from './components/ChatInput.vue';
 
-type Status = "loading" | "connected" | "disconnected";
+interface ModelDef {
+  id: string;
+  name: string;
+  modelId: string;
+  supportsThinking: boolean;
+}
+interface PlatformMeta {
+  key: string;
+  name: string;
+  models: ModelDef[];
+}
 
-const status = ref<Status>("loading");
-const serverVersion = ref("");
-const serverTimestamp = ref("");
-const errorMessage = ref("");
+const chatApiUrl = import.meta.env.DEV
+  ? '/api/chat'
+  : `http://localhost:${__SERVER_PORT__}/api/chat`;
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
+const input = ref('');
+const chat = new Chat({
+  transport: new DefaultChatTransport({ api: chatApiUrl }),
+});
+const messagesContainer = ref<HTMLElement>();
+const enableThinking = ref(false);
+const selectedModel = ref('');
+const platforms = ref<PlatformMeta[]>([]);
+const serverConnected = ref(false);
+
+const currentPlatform = computed(() => {
+  const [key] = selectedModel.value.split(':');
+  return platforms.value.find((p) => p.key === key);
+});
+const currentModel = computed(() => {
+  const [, id] = selectedModel.value.split(':');
+  return currentPlatform.value?.models.find((m) => m.id === id);
+});
+const thinkingSupported = computed(
+  () => currentModel.value?.supportsThinking ?? false,
+);
+const providerLabel = computed(() => currentPlatform.value?.name ?? '');
 
 onMounted(async () => {
-  const healthUrl = import.meta.env.DEV
-    ? "/health"
-    : `http://localhost:${__SERVER_PORT__}/health`;
+  const baseUrl = import.meta.env.DEV
+    ? ''
+    : `http://localhost:${__SERVER_PORT__}`;
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+  const healthController = new AbortController();
+  const healthTimeout = setTimeout(() => healthController.abort(), 5000);
+
+  // Health check + platforms in parallel
+  const results = await Promise.allSettled([
+    fetch(`${baseUrl}/health`, { signal: healthController.signal }),
+    fetch(`${baseUrl}/api/platforms`),
+  ]);
+
+  clearTimeout(healthTimeout);
+
+  if (results[0].status === 'fulfilled' && results[0].value.ok) {
+    serverConnected.value = true;
+  }
+
+  if (results[1].status === 'fulfilled') {
     try {
-      const res = await fetch(healthUrl, {
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      status.value = "connected";
-      serverVersion.value = data.version;
-      serverTimestamp.value = data.timestamp;
-      return;
-    } catch (e: unknown) {
-      if (attempt === MAX_RETRIES - 1) {
-        status.value = "disconnected";
-        if (e instanceof DOMException && e.name === "TimeoutError") {
-          errorMessage.value = "连接超时";
-        } else if (e instanceof Error) {
-          errorMessage.value = e.message;
-        } else {
-          errorMessage.value = "未知错误";
+      const res = await results[1].value.json();
+      platforms.value = (res as { platforms: PlatformMeta[] }).platforms;
+      if (platforms.value.length > 0) {
+        const p = platforms.value[0];
+        if (p && p.models.length > 0) {
+          selectedModel.value = `${p.key}:${p.models[0]!.id}`;
         }
-      } else {
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       }
+    } catch {
+      console.error('Failed to parse platforms response');
     }
   }
 });
+
+const isBusy = computed(
+  () => chat.status === 'submitted' || chat.status === 'streaming',
+);
+
+const showLoading = computed(() => {
+  if (!isBusy.value) return false;
+  const messages = chat.messages;
+  if (messages.length === 0) return true;
+  const last = messages[messages.length - 1]!;
+  if (last.role !== 'assistant') return true;
+  if (last.parts.some((p: any) => p.type === 'reasoning')) return false;
+  const hasText = last.parts.some((p: any) => p.type === 'text' && p.text);
+  return !hasText;
+});
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop =
+        messagesContainer.value.scrollHeight;
+    }
+  });
+};
+
+watch(() => chat.messages.length, scrollToBottom);
+watch(
+  () => chat.messages[chat.messages.length - 1]?.parts?.length,
+  scrollToBottom,
+);
+
+const handleSend = () => {
+  if (!input.value.trim()) return;
+  const [provider, modelKey] = selectedModel.value.split(':');
+  chat.sendMessage(
+    { text: input.value },
+    { body: { enableThinking: enableThinking.value, provider, model: modelKey } },
+  );
+  input.value = '';
+  scrollToBottom();
+};
 </script>
 
 <template>
-  <div class="flex h-screen items-center justify-center bg-background">
-    <div class="flex flex-col items-center gap-8 text-center">
-      <div>
-        <h1 class="text-4xl font-semibold tracking-tight text-foreground">
-          Agent Studio
-        </h1>
-        <p class="mt-2 max-w-md text-lg text-muted-foreground">
-          一个桌面 AI Agent 开发平台——设定目标，Agent 自主规划并执行任务。
+  <div class="flex flex-col h-screen max-w-[800px] mx-auto">
+    <!-- Header: status + model selector -->
+    <header
+      class="flex items-center justify-between px-4 py-2.5 border-b shrink-0"
+    >
+      <div class="flex items-center">
+        <ChatStatus
+          :status="serverConnected ? chat.status : 'error'"
+          :error="serverConnected ? chat.error : new Error('Server disconnected')"
+        />
+      </div>
+      <div class="flex items-center gap-3">
+        <select
+          v-model="selectedModel"
+          class="bg-secondary text-foreground border rounded-md px-2 py-1 text-sm font-sans cursor-pointer outline-none focus:border-gray-500"
+        >
+          <optgroup
+            v-for="p in platforms"
+            :key="p.key"
+            :label="p.name"
+          >
+            <option
+              v-for="m in p.models"
+              :key="m.id"
+              :value="`${p.key}:${m.id}`"
+            >
+              {{ m.name }}
+            </option>
+          </optgroup>
+        </select>
+        <label
+          v-if="thinkingSupported"
+          class="flex items-center gap-1.5 cursor-pointer select-none"
+        >
+          <input type="checkbox" v-model="enableThinking" class="hidden" />
+          <span
+            class="w-8 h-[18px] rounded-full relative transition-colors"
+            :class="enableThinking ? 'bg-blue-700' : 'bg-gray-600'"
+          >
+            <span
+              class="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform"
+              :class="enableThinking ? 'left-[14px]' : 'left-0.5'"
+            />
+          </span>
+          <span class="text-sm text-muted-foreground">思考</span>
+        </label>
+      </div>
+    </header>
+
+    <!-- Messages area -->
+    <main
+      ref="messagesContainer"
+      class="flex-1 overflow-y-auto px-6 py-4 scroll-smooth chat-messages"
+    >
+      <div
+        v-if="!chat.messages.length"
+        class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
+      >
+        <div class="opacity-40">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            />
+          </svg>
+        </div>
+        <h2 class="text-xl font-medium text-foreground">
+          有什么我可以帮助你的？
+        </h2>
+        <p class="text-sm">
+          {{ currentModel?.name ?? '' }}
+          <template v-if="currentModel?.name && providerLabel"> · </template>
+          {{ providerLabel }}
         </p>
       </div>
 
-      <div class="w-80 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
-        <div v-if="status === 'loading'" class="text-muted-foreground">
-          正在检查服务器连接...
-        </div>
-        <div v-else-if="status === 'connected'" class="text-green-600">
-          <p class="font-medium">已连接</p>
-          <p class="mt-2 text-sm">版本: {{ serverVersion }}</p>
-          <p class="text-sm">时间: {{ serverTimestamp }}</p>
-        </div>
-        <div v-else class="text-red-500">
-          <p class="font-medium">未连接</p>
-          <p class="mt-2 text-sm">{{ errorMessage }}</p>
+      <ChatMessage
+        v-for="(m, idx) in chat.messages"
+        :key="m.id"
+        :message="m"
+        :status="chat.status"
+        :is-last="idx === chat.messages.length - 1"
+      />
+
+      <!-- Typing indicator -->
+      <div v-if="showLoading" class="flex py-2">
+        <div class="flex items-center gap-[3px]">
+          <span
+            class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
+          />
+          <span
+            class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
+            style="animation-delay: 0.2s"
+          />
+          <span
+            class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
+            style="animation-delay: 0.4s"
+          />
         </div>
       </div>
-    </div>
+    </main>
+
+    <!-- Input area -->
+    <ChatInput
+      v-model="input"
+      :status="chat.status"
+      @send="handleSend"
+      @stop="chat.stop()"
+    />
   </div>
 </template>
+
+<style>
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+</style>

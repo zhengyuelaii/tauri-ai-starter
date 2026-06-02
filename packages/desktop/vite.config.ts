@@ -40,6 +40,7 @@ export default defineConfig(() => ({
     },
     proxy: {
       "/health": `http://localhost:${SERVER_PORT}`,
+      "/api": `http://localhost:${SERVER_PORT}`,
     },
   },
 

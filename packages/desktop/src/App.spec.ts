@@ -8,7 +8,41 @@ describe("App", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
-      () => new Promise(() => {}),
+      (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/api/platforms")) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                platforms: [
+                  {
+                    key: "siliconflow",
+                    name: "SiliconFlow",
+                    models: [
+                      {
+                        id: "v4-flash",
+                        name: "DeepSeek V4 Flash",
+                        modelId: "deepseek-ai/DeepSeek-V4-Flash",
+                        supportsThinking: true,
+                      },
+                    ],
+                  },
+                ],
+              }),
+          } as Response);
+        }
+        // health check
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              status: "ok",
+              version: "0.0.2",
+              timestamp: new Date().toISOString(),
+            }),
+        } as Response);
+      },
     );
   });
 
@@ -17,94 +51,26 @@ describe("App", () => {
     vi.useRealTimers();
   });
 
-  it("shows loading state initially", () => {
+  it("renders the chat interface", () => {
     const wrapper = mount(App);
 
-    expect(wrapper.text()).toContain("正在检查服务器连接");
+    expect(wrapper.text()).toContain("有什么我可以帮助你的？");
   });
 
-  it("shows connected state when health check succeeds on first attempt", async () => {
-    fetchSpy.mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          status: "ok",
-          timestamp: "2026-06-01T12:00:00.000Z",
-          version: "0.0.2",
-        }),
-    } as Response);
-
-    const wrapper = mount(App);
+  it("fetches platforms and health on mount", async () => {
+    mount(App);
 
     await vi.runAllTimersAsync();
+    await vi.runAllTimersAsync();
 
-    expect(wrapper.text()).toContain("已连接");
+    const calls = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(calls.some((url) => url.includes("/api/platforms"))).toBe(true);
+    expect(calls.some((url) => url.includes("/health"))).toBe(true);
   });
 
-  it("retries and shows connected when health check succeeds on third attempt", async () => {
-    let calls = 0;
-    fetchSpy.mockImplementation(() => {
-      calls++;
-      if (calls < 3) {
-        return Promise.reject(new Error("Connection refused"));
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            status: "ok",
-            timestamp: "2026-06-01T12:00:00.000Z",
-            version: "0.0.2",
-          }),
-      } as Response);
-    });
-
+  it("renders ChatInput component", () => {
     const wrapper = mount(App);
 
-    await vi.runAllTimersAsync();
-
-    expect(wrapper.text()).toContain("已连接");
-    expect(calls).toBe(3);
-  });
-
-  it("shows disconnected after all 3 retries fail", async () => {
-    fetchSpy.mockRejectedValue(new Error("Connection refused"));
-
-    const wrapper = mount(App);
-
-    await vi.runAllTimersAsync();
-
-    expect(wrapper.text()).toContain("未连接");
-    expect(wrapper.text()).toContain("Connection refused");
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
-  });
-
-  it("shows disconnected when server returns non-ok status on every retry", async () => {
-    fetchSpy.mockResolvedValue({
-      ok: false,
-      status: 503,
-      json: () => Promise.resolve({}),
-    } as Response);
-
-    const wrapper = mount(App);
-
-    await vi.runAllTimersAsync();
-
-    expect(wrapper.text()).toContain("未连接");
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
-  });
-
-  it("shows timeout message when requests time out", async () => {
-    fetchSpy.mockRejectedValue(
-      new DOMException("The operation was aborted", "TimeoutError"),
-    );
-
-    const wrapper = mount(App);
-
-    await vi.runAllTimersAsync();
-
-    expect(wrapper.text()).toContain("未连接");
-    expect(wrapper.text()).toContain("连接超时");
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(wrapper.findComponent({ name: "ChatInput" }).exists()).toBe(true);
   });
 });

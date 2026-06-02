@@ -7,6 +7,8 @@
   "scripts": {
     "tauri": "pnpm --filter @tauri-monorepo/desktop tauri",
     "tauri:dev": "pnpm --filter @tauri-monorepo/desktop tauri dev",
+    "dev": "pnpm --filter @tauri-monorepo/shared build && node packages/desktop/scripts/dev.cjs",
+    "web:dev": "pnpm --filter @tauri-monorepo/desktop dev",
     "server:dev": "pnpm --filter @tauri-monorepo/server start:dev",
     "server:build": "pnpm --filter @tauri-monorepo/server build",
     "server:test": "pnpm --filter @tauri-monorepo/server test",
