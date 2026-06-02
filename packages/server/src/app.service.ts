@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { greet } from '@tauri-monorepo/shared';
 
-const VERSION = process.env.npm_package_version ?? '0.0.1';
+const VERSION = process.env.npm_package_version ?? '0.0.2';
 
 @Injectable()
 export class AppService {

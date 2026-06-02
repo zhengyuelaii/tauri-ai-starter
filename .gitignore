@@ -37,3 +37,4 @@ coverage
 
 # pnpm store
 .pnpm-store
+dist-binary/

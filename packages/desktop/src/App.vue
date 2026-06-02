@@ -13,7 +13,11 @@ onMounted(() => {
   controller = new AbortController();
   const timeoutId = setTimeout(() => controller!.abort(), 5000);
 
-  fetch("/health", { signal: controller.signal })
+  const healthUrl = import.meta.env.DEV
+    ? "/health"
+    : "http://localhost:3000/health";
+
+  fetch(healthUrl, { signal: controller.signal })
     .then(async (res) => {
       clearTimeout(timeoutId);
       if (!res.ok) {

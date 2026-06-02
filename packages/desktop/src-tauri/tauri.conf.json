@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "io.github.zhengyuelaii.desktop",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm --filter @tauri-monorepo/shared build && (trap 'kill 0' EXIT; pnpm dev & pnpm --filter @tauri-monorepo/server start:dev & wait)",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm --filter @tauri-monorepo/server build:sidecar && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -30,6 +30,7 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "externalBin": ["binaries/server"]
   }
 }
