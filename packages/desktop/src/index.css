@@ -127,6 +127,19 @@
     @apply font-sans;
     }
   /* macOS WKWebView may override user-select */
+  .settings-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .settings-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .settings-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  .settings-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
   body, body * {
     -webkit-user-select: auto;
     user-select: auto;

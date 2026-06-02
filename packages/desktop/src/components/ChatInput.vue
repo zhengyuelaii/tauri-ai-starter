@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue';
+import { Send, Square } from 'lucide-vue-next';
 
 const props = defineProps<{
   modelValue: string;
   status: string;
   disabled?: boolean;
+  enableThinking: boolean;
+  thinkingSupported: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
+  'update:enableThinking': [value: boolean];
   send: [];
   stop: [];
 }>();
@@ -77,12 +81,7 @@ const isStreaming = computed(
         title="停止生成"
         @click="emit('stop')"
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        ><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+        <Square :size="14" fill="currentColor" />
       </button>
       <button
         v-else
@@ -91,19 +90,34 @@ const isStreaming = computed(
         title="发送"
         @click="emit('send')"
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        ><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+        <Send :size="16" />
       </button>
     </div>
-    <div class="text-center mt-1.5 text-xs text-muted-foreground">
+
+    <!-- Footer -->
+    <div class="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
+      <label
+        v-if="thinkingSupported"
+        class="flex items-center gap-1.5 cursor-pointer select-none"
+      >
+        <input
+          type="checkbox"
+          :checked="enableThinking"
+          class="hidden"
+          @change="emit('update:enableThinking', ($event.target as HTMLInputElement).checked)"
+        />
+        <span
+          class="w-8 h-[18px] rounded-full relative transition-colors"
+          :class="enableThinking ? 'bg-blue-700' : 'bg-gray-600'"
+        >
+          <span
+            class="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform"
+            :class="enableThinking ? 'left-[14px]' : 'left-0.5'"
+          />
+        </span>
+        <span>思考</span>
+      </label>
+      <div v-else />
       <span>Shift + Enter 换行</span>
     </div>
   </div>
