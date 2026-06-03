@@ -30,7 +30,7 @@ if (!targetTriple) {
 }
 
 // 3. Run pkg to compile NestJS into standalone binary
-const distDir = path.join(__dirname, "..", "dist");
+const distDir = path.join(__dirname, "..", "dist", "src");
 const distBinaryDir = path.join(__dirname, "..", "dist-binary");
 fs.mkdirSync(distBinaryDir, { recursive: true });
 

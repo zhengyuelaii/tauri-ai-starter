@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Trash2, MessageSquare, Sparkles, PanelLeft, Settings } from 'lucide-vue-next';
+import { Plus, Trash2, MessageSquare, Sparkles, PanelLeft, Settings, MoreHorizontal, Pencil } from 'lucide-vue-next';
 import SettingsDialog from './SettingsDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,18 +9,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 import type { PlatformMeta } from '@/types';
-
-export interface Session {
-  id: string;
-  title: string;
-}
+import type { SessionData } from '@/api';
 
 defineProps<{
   collapsed: boolean;
-  sessions: Session[];
+  sessions: SessionData[];
   activeId: string;
   platforms: PlatformMeta[];
   refreshPlatforms: () => Promise<void>;
@@ -29,11 +29,33 @@ defineProps<{
 const emit = defineEmits<{
   select: [id: string];
   delete: [id: string];
+  rename: [id: string, title: string];
   new: [];
   toggle: [];
 }>();
 
 const hoveredId = ref<string | null>(null);
+const editingId = ref<string | null>(null);
+const editTitle = ref('');
+const kebabOpen = ref<Record<string, boolean>>({});
+
+function startEdit(id: string, title: string) {
+  editingId.value = id;
+  editTitle.value = title;
+  kebabOpen.value[id] = false;
+}
+
+function confirmEdit(id: string) {
+  const trimmed = editTitle.value.trim();
+  if (trimmed && trimmed !== '') {
+    emit('rename', id, trimmed);
+  }
+  editingId.value = null;
+}
+
+function cancelEdit() {
+  editingId.value = null;
+}
 </script>
 
 <template>
@@ -43,7 +65,6 @@ const hoveredId = ref<string | null>(null);
   >
     <!-- Logo -->
     <div class="p-3 pb-1">
-      <!-- Expanded logo -->
       <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 py-1.5 select-none">
         <div class="w-7 h-7 rounded-lg bg-blue-700 flex items-center justify-center shrink-0">
           <Sparkles :size="15" class="text-white" />
@@ -59,7 +80,6 @@ const hoveredId = ref<string | null>(null);
           <PanelLeft :size="16" />
         </Button>
       </div>
-      <!-- Collapsed logo mark (click to expand) -->
       <div
         v-else
         class="flex justify-center py-1"
@@ -104,17 +124,49 @@ const hoveredId = ref<string | null>(null);
             @mouseenter="hoveredId = s.id"
             @mouseleave="hoveredId = null"
             @click="emit('select', s.id)"
+            @dblclick="startEdit(s.id, s.title)"
           >
-            <span class="truncate flex-1">{{ s.title }}</span>
-            <Button
-              v-show="hoveredId === s.id"
-              variant="ghost"
-              size="icon"
-              class="h-6 w-6 shrink-0 text-muted-foreground hover:text-red-500"
-              @click.stop="emit('delete', s.id)"
-            >
-              <Trash2 :size="14" />
-            </Button>
+            <!-- Inline edit mode -->
+            <input
+              v-if="editingId === s.id"
+              v-model="editTitle"
+              class="flex-1 bg-background border rounded px-1.5 py-0.5 text-sm outline-none"
+              @keydown.enter="confirmEdit(s.id)"
+              @keydown.escape="cancelEdit()"
+              @blur="confirmEdit(s.id)"
+              @click.stop
+              ref="editInput"
+            />
+            <span v-else class="truncate flex-1">{{ s.title }}</span>
+
+            <!-- Kebab menu -->
+            <Popover v-model:open="kebabOpen[s.id]" v-show="hoveredId === s.id && editingId !== s.id" @click.stop>
+              <PopoverTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <MoreHorizontal :size="14" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" class="w-36 p-1">
+                <button
+                  class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                  @click="startEdit(s.id, s.title)"
+                >
+                  <Pencil :size="14" />
+                  <span>重命名</span>
+                </button>
+                <button
+                  class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-red-500 cursor-pointer"
+                  @click="emit('delete', s.id); kebabOpen[s.id] = false"
+                >
+                  <Trash2 :size="14" />
+                  <span>删除</span>
+                </button>
+              </PopoverContent>
+            </Popover>
           </div>
           <div
             v-if="sessions.length === 0"

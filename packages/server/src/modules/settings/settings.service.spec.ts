@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { SettingsService } from './settings.service';
 import { SETTINGS_DB, type SettingsDatabase } from './db';
-import * as schema from './db/schema';
+import * as schema from '../../db/schema';
 
 function createTestDb(): SettingsDatabase {
   const sqlite = new Database(':memory:');
@@ -22,8 +22,24 @@ function createTestDb(): SettingsDatabase {
       enabled INTEGER NOT NULL DEFAULT 1,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL DEFAULT '新对话',
+      provider_key TEXT,
+      model_id TEXT,
+      enable_thinking INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+      role TEXT NOT NULL,
+      parts TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
-  return drizzle(sqlite, { schema });
+  return drizzle(sqlite, { schema }) as unknown as SettingsDatabase;
 }
 
 describe('SettingsService', () => {

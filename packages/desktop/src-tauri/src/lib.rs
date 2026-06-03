@@ -50,6 +50,12 @@ pub fn run() {
                 }
             }
 
+            // Ensure window gets focus after sidecar spawn on macOS
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![greet])
@@ -67,6 +73,14 @@ pub fn run() {
                 {
                     let _ = child.kill();
                 }
+            }
+        }
+
+        // Force focus after webview is ready (macOS loses focus during sidecar init)
+        if let tauri::RunEvent::Ready = event {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
             }
         }
     });

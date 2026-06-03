@@ -16,16 +16,27 @@ import {
 } from './providers';
 import type { ChatRequestDto } from './dto/chat-request.dto';
 import { SettingsService } from '../settings/settings.service';
+import { SessionsService } from '../sessions/sessions.service';
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly sessionsService: SessionsService,
+  ) {}
 
   async streamChat(request: ChatRequestDto, res: Response) {
-    const { messages } = request;
+    let { messages } = request;
     const platformKey = request.provider ?? 'siliconflow';
     const modelKey = request.model ?? 'v4-flash';
     const enableThinking = request.enableThinking ?? false;
+
+    if (request.sessionId) {
+      const dbMessages = await this.sessionsService.getAllMessages(request.sessionId);
+      const dbIds = new Set(dbMessages.map((m) => m.id));
+      const newMessages = messages.filter((m) => !dbIds.has(m.id));
+      messages = [...dbMessages, ...newMessages] as any;
+    }
 
     const strategy = getStrategy(platformKey);
     if (!strategy) {

@@ -1,37 +1,36 @@
 <script setup lang="ts">
-import { Chat } from '@ai-sdk/vue';
-import { DefaultChatTransport } from 'ai';
 import { ref, watch, nextTick, computed, onMounted } from 'vue';
-import type { Session } from './components/Sidebar.vue';
 import type { PlatformMeta } from './types';
 import { fetchPlatforms } from './api';
+import { useChatSession } from './composables/useChatSession';
+import { useToast } from './composables/useToast';
 import Sidebar from './components/Sidebar.vue';
 import AppHeader from './components/AppHeader.vue';
 import ChatMessage from './components/ChatMessage.vue';
 import ChatInput from './components/ChatInput.vue';
+import ToastProvider from './components/ToastProvider.vue';
 
-const chatApiUrl = import.meta.env.DEV
-  ? '/api/chat'
-  : `http://localhost:${__SERVER_PORT__}/api/chat`;
+const { toast } = useToast();
+const {
+  sessions,
+  activeSessionId,
+  chat,
+  isBusy,
+  loadSessions,
+  switchSession,
+  newSession,
+  removeSession,
+  renameSession,
+  sendMessage,
+} = useChatSession();
 
 const input = ref('');
-const chat = new Chat({
-  transport: new DefaultChatTransport({ api: chatApiUrl }),
-});
 const messagesContainer = ref<HTMLElement>();
 const enableThinking = ref(false);
 const selectedModel = ref('');
 const platforms = ref<PlatformMeta[]>([]);
 const serverConnected = ref(false);
-
 const sidebarCollapsed = ref(false);
-const sessions = ref<Session[]>([
-  { id: 's1', title: 'Vue 3 响应式原理讨论' },
-  { id: 's2', title: 'NestJS 依赖注入机制' },
-  { id: 's3', title: 'Tauri sidecar 实现方案' },
-  { id: 's4', title: 'Tailwind CSS 最佳实践' },
-]);
-const activeSessionId = ref('');
 
 const currentPlatform = computed(() => {
   const [key] = selectedModel.value.split(':');
@@ -51,15 +50,42 @@ async function refreshPlatforms() {
     const list = await fetchPlatforms();
     platforms.value = list;
     if (list.length > 0 && !selectedModel.value) {
-      const p = list[0];
-      if (p && p.models.length > 0) {
-        selectedModel.value = `${p.key}:${p.models[0]!.id}`;
+      const saved = localStorage.getItem('lastModel');
+      if (saved && list.some((p) => {
+        const [pk, mk] = saved.split(':');
+        return p.key === pk && p.models.some((m) => m.id === mk);
+      })) {
+        selectedModel.value = saved;
+      } else {
+        const p = list[0];
+        if (p && p.models.length > 0) {
+          selectedModel.value = `${p.key}:${p.models[0]!.id}`;
+        }
       }
     }
   } catch {
-    console.error('Failed to fetch platforms');
+    // silent
   }
 }
+
+function saveModelPref() {
+  if (selectedModel.value) {
+    localStorage.setItem('lastModel', selectedModel.value);
+  }
+}
+
+watch(activeSessionId, (id) => {
+  if (!id) {
+    const saved = localStorage.getItem('lastModel');
+    if (saved) selectedModel.value = saved;
+    return;
+  }
+  const s = sessions.value.find((s) => s.id === id);
+  if (s?.providerKey && s?.modelId) {
+    selectedModel.value = `${s.providerKey}:${s.modelId}`;
+    enableThinking.value = s.enableThinking ?? false;
+  }
+});
 
 onMounted(async () => {
   const baseUrl = import.meta.env.DEV
@@ -72,6 +98,7 @@ onMounted(async () => {
   const results = await Promise.allSettled([
     fetch(`${baseUrl}/health`, { signal: healthController.signal }),
     refreshPlatforms(),
+    loadSessions(),
   ]);
 
   clearTimeout(healthTimeout);
@@ -81,13 +108,9 @@ onMounted(async () => {
   }
 });
 
-const isBusy = computed(
-  () => chat.status === 'submitted' || chat.status === 'streaming',
-);
-
 const showLoading = computed(() => {
   if (!isBusy.value) return false;
-  const messages = chat.messages;
+  const messages = chat.value.messages;
   if (messages.length === 0) return true;
   const last = messages[messages.length - 1]!;
   if (last.role !== 'assistant') return true;
@@ -105,52 +128,65 @@ const scrollToBottom = () => {
   });
 };
 
-watch(() => chat.messages.length, scrollToBottom);
+watch(() => chat.value.messages.length, scrollToBottom);
 watch(
-  () => chat.messages[chat.messages.length - 1]?.parts?.length,
+  () => chat.value.messages[chat.value.messages.length - 1]?.parts?.length,
   scrollToBottom,
 );
 
-const handleSend = () => {
+function onSend() {
   if (!input.value.trim() || !selectedModel.value) return;
   const [provider, modelKey] = selectedModel.value.split(':');
-  chat.sendMessage(
-    { text: input.value },
-    { body: { enableThinking: enableThinking.value, provider, model: modelKey } },
-  );
+
+  saveModelPref();
+  sendMessage(input.value, {
+    provider,
+    model: modelKey,
+    enableThinking: enableThinking.value,
+  });
   input.value = '';
-  scrollToBottom();
-};
+}
 
-const handleNewSession = () => {
-  const id = `s${Date.now()}`;
-  sessions.value.unshift({ id, title: '新对话' });
-  activeSessionId.value = id;
-};
+async function handleNewSession() {
+  await newSession();
+}
 
-const handleDeleteSession = (id: string) => {
-  sessions.value = sessions.value.filter((s) => s.id !== id);
-};
+async function handleDeleteSession(id: string) {
+  try {
+    await removeSession(id);
+    toast('会话已删除', 'success');
+  } catch {
+    toast('删除失败', 'error');
+  }
+}
+
+async function handleRenameSession(id: string, title: string) {
+  await renameSession(id, title);
+}
+
+function handleSelectSession(id: string) {
+  switchSession(id);
+}
 </script>
 
 <template>
   <div class="flex h-screen bg-background">
-    <!-- Sidebar -->
+    <ToastProvider />
+
     <Sidebar
       :collapsed="sidebarCollapsed"
       :sessions="sessions"
       :active-id="activeSessionId"
       :platforms="platforms"
       :refresh-platforms="refreshPlatforms"
-      @select="activeSessionId = $event"
+      @select="handleSelectSession"
       @delete="handleDeleteSession"
+      @rename="handleRenameSession"
       @new="handleNewSession"
       @toggle="sidebarCollapsed = !sidebarCollapsed"
     />
 
-    <!-- Main area -->
     <div class="flex-1 flex flex-col min-w-0">
-      <!-- Header -->
       <AppHeader
         :platforms="platforms"
         :selected-model="selectedModel"
@@ -160,13 +196,12 @@ const handleDeleteSession = (id: string) => {
         @select-model="selectedModel = $event"
       />
 
-      <!-- Messages -->
       <main
         ref="messagesContainer"
         class="flex-1 overflow-y-auto px-6 py-4 scroll-smooth chat-messages"
       >
         <div
-          v-if="!chat.messages.length"
+          v-if="!activeSessionId"
           class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
         >
           <div class="opacity-40">
@@ -220,13 +255,12 @@ const handleDeleteSession = (id: string) => {
         </div>
       </main>
 
-      <!-- Input -->
       <ChatInput
         v-model="input"
         :status="chat.status"
         :enable-thinking="enableThinking"
         :thinking-supported="thinkingSupported"
-        @send="handleSend"
+        @send="onSend"
         @stop="chat.stop()"
         @update:enable-thinking="enableThinking = $event"
       />

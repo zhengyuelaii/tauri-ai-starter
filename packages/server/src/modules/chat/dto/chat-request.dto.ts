@@ -16,4 +16,8 @@ export class ChatRequestDto {
   @IsBoolean()
   @IsOptional()
   enableThinking?: boolean;
+
+  @IsString()
+  @IsOptional()
+  sessionId?: string;
 }

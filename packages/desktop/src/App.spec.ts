@@ -19,17 +19,25 @@ describe("App", () => {
                   {
                     key: "siliconflow",
                     name: "SiliconFlow",
+                    connected: true,
                     models: [
                       {
                         id: "v4-flash",
                         name: "DeepSeek V4 Flash",
                         modelId: "deepseek-ai/DeepSeek-V4-Flash",
                         supportsThinking: true,
+                        enabled: true,
                       },
                     ],
                   },
                 ],
               }),
+          } as Response);
+        }
+        if (urlStr.includes("/api/sessions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ sessions: [] }),
           } as Response);
         }
         // health check
