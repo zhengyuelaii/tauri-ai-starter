@@ -23,6 +23,7 @@ defineProps<{
   sessions: Session[];
   activeId: string;
   platforms: PlatformMeta[];
+  refreshPlatforms: () => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -125,7 +126,7 @@ const hoveredId = ref<string | null>(null);
       </ScrollArea>
 
       <div class="p-3 border-t">
-        <SettingsDialog :platforms="platforms">
+        <SettingsDialog :platforms="platforms" :refresh-platforms="refreshPlatforms">
           <template #trigger>
             <Button
               variant="ghost"
@@ -181,7 +182,7 @@ const hoveredId = ref<string | null>(null);
 
         <div class="flex-1" />
 
-        <SettingsDialog :platforms="platforms">
+        <SettingsDialog :platforms="platforms" :refresh-platforms="refreshPlatforms">
           <template #trigger>
             <Tooltip>
               <TooltipTrigger as-child>

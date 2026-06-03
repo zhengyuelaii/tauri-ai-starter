@@ -20,6 +20,7 @@ import SettingsModelsTab from './SettingsModelsTab.vue';
 
 defineProps<{
   platforms: PlatformMeta[];
+  refreshPlatforms: () => Promise<void>;
 }>();
 
 const tabs = [
@@ -68,10 +69,10 @@ const tabs = [
               <SettingsGeneralTab />
             </TabsContent>
             <TabsContent value="providers" class="mt-0">
-              <SettingsProvidersTab :platforms="platforms" />
+              <SettingsProvidersTab :platforms="platforms" :refresh-platforms="refreshPlatforms" />
             </TabsContent>
             <TabsContent value="models" class="mt-0">
-              <SettingsModelsTab :platforms="platforms" />
+              <SettingsModelsTab :platforms="platforms" :refresh-platforms="refreshPlatforms" />
             </TabsContent>
           </div>
         </div>

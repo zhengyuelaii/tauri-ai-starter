@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Eye, EyeOff, Plus, Plug2, Unplug } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -9,45 +9,75 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  fetchSettingsProviders,
+  connectProvider,
+  disconnectProvider,
+} from '@/api';
 
 const props = defineProps<{
   platforms: PlatformMeta[];
+  refreshPlatforms: () => Promise<void>;
 }>();
 
-const connectedProviders = ref(new Set<string>());
+interface ProviderState {
+  key: string;
+  name: string;
+  connected: boolean;
+  hasApiKey: boolean;
+  baseUrl: string | null;
+}
+
+const providers = ref<ProviderState[]>([]);
 const showKey = ref<Record<string, boolean>>({});
 const apiKeyInput = ref<Record<string, string>>({});
+const connecting = ref<Record<string, boolean>>({});
+
+async function loadProviders() {
+  try {
+    const res = await fetchSettingsProviders();
+    providers.value = res.providers;
+  } catch {
+    // silent
+  }
+}
 
 const toggleShowKey = (key: string) => {
   showKey.value[key] = !showKey.value[key];
 };
 
-const connect = (key: string) => {
-  if (apiKeyInput.value[key]?.trim()) {
-    connectedProviders.value = new Set(connectedProviders.value).add(key);
+const connect = async (key: string) => {
+  if (!apiKeyInput.value[key]?.trim()) return;
+  connecting.value[key] = true;
+  try {
+    await connectProvider(key, apiKeyInput.value[key]);
     apiKeyInput.value[key] = '';
+    await Promise.all([loadProviders(), props.refreshPlatforms()]);
+  } catch {
+    // silent
+  } finally {
+    connecting.value[key] = false;
   }
 };
 
-const disconnect = (key: string) => {
-  const next = new Set(connectedProviders.value);
-  next.delete(key);
-  connectedProviders.value = next;
+const disconnect = async (key: string) => {
+  try {
+    await disconnectProvider(key);
+    await Promise.all([loadProviders(), props.refreshPlatforms()]);
+  } catch {
+    // silent
+  }
 };
 
 const connectedList = computed(() =>
-  [...connectedProviders.value]
+  providers.value.filter((p) => p.connected),
 );
-
-const platformNameMap = computed(() => {
-  const m = new Map<string, string>();
-  for (const p of props.platforms) m.set(p.key, p.name);
-  return m;
-});
 
 const unconnectedList = computed(() =>
-  props.platforms.filter(p => !connectedProviders.value.has(p.key))
+  providers.value.filter((p) => !p.connected),
 );
+
+onMounted(loadProviders);
 </script>
 
 <template>
@@ -61,15 +91,15 @@ const unconnectedList = computed(() =>
         暂无已连接的供应商
       </div>
       <div class="divide-y divide-border rounded-lg bg-secondary overflow-hidden">
-        <div v-for="key in connectedList" :key="key" class="flex items-center justify-between px-3 py-2.5">
-        <div class="flex items-center gap-2">
-          <Plug2 :size="14" class="text-green-500" />
-          <span class="text-sm">{{ platformNameMap.get(key) ?? key }}</span>
-        </div>
-        <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-red-500" @click="disconnect(key)">
-          <Unplug :size="14" class="mr-1.5" />
-          断开连接
-        </Button>
+        <div v-for="p in connectedList" :key="p.key" class="flex items-center justify-between px-3 py-2.5">
+          <div class="flex items-center gap-2">
+            <Plug2 :size="14" class="text-green-500" />
+            <span class="text-sm">{{ p.name }}</span>
+          </div>
+          <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-red-500" @click="disconnect(p.key)">
+            <Unplug :size="14" class="mr-1.5" />
+            断开连接
+          </Button>
         </div>
       </div>
     </div>
@@ -125,11 +155,11 @@ const unconnectedList = computed(() =>
                 <Button
                   variant="outline"
                   class="shrink-0"
-                  :disabled="connectedProviders.has(p.key) || !apiKeyInput[p.key]?.trim()"
+                  :disabled="connecting[p.key] || !apiKeyInput[p.key]?.trim()"
                   @click="connect(p.key)"
                 >
                   <Plus :size="14" class="mr-1.5" />
-                  {{ connectedProviders.has(p.key) ? '已连接' : '连接' }}
+                  {{ connecting[p.key] ? '连接中...' : '连接' }}
                 </Button>
               </div>
             </div>

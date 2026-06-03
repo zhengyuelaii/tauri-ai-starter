@@ -4,6 +4,7 @@ import { DefaultChatTransport } from 'ai';
 import { ref, watch, nextTick, computed, onMounted } from 'vue';
 import type { Session } from './components/Sidebar.vue';
 import type { PlatformMeta } from './types';
+import { fetchPlatforms } from './api';
 import Sidebar from './components/Sidebar.vue';
 import AppHeader from './components/AppHeader.vue';
 import ChatMessage from './components/ChatMessage.vue';
@@ -45,6 +46,21 @@ const thinkingSupported = computed(
 );
 const providerLabel = computed(() => currentPlatform.value?.name ?? '');
 
+async function refreshPlatforms() {
+  try {
+    const list = await fetchPlatforms();
+    platforms.value = list;
+    if (list.length > 0 && !selectedModel.value) {
+      const p = list[0];
+      if (p && p.models.length > 0) {
+        selectedModel.value = `${p.key}:${p.models[0]!.id}`;
+      }
+    }
+  } catch {
+    console.error('Failed to fetch platforms');
+  }
+}
+
 onMounted(async () => {
   const baseUrl = import.meta.env.DEV
     ? ''
@@ -55,28 +71,13 @@ onMounted(async () => {
 
   const results = await Promise.allSettled([
     fetch(`${baseUrl}/health`, { signal: healthController.signal }),
-    fetch(`${baseUrl}/api/platforms`),
+    refreshPlatforms(),
   ]);
 
   clearTimeout(healthTimeout);
 
   if (results[0].status === 'fulfilled' && results[0].value.ok) {
     serverConnected.value = true;
-  }
-
-  if (results[1].status === 'fulfilled') {
-    try {
-      const res = await results[1].value.json();
-      platforms.value = (res as { platforms: PlatformMeta[] }).platforms;
-      if (platforms.value.length > 0) {
-        const p = platforms.value[0];
-        if (p && p.models.length > 0) {
-          selectedModel.value = `${p.key}:${p.models[0]!.id}`;
-        }
-      }
-    } catch {
-      console.error('Failed to parse platforms response');
-    }
   }
 });
 
@@ -140,6 +141,7 @@ const handleDeleteSession = (id: string) => {
       :sessions="sessions"
       :active-id="activeSessionId"
       :platforms="platforms"
+      :refresh-platforms="refreshPlatforms"
       @select="activeSessionId = $event"
       @delete="handleDeleteSession"
       @new="handleNewSession"

@@ -57,18 +57,20 @@ const selectModel = (value: string) => {
     <PopoverContent align="start" class="w-[280px] p-0">
       <div class="max-h-[360px] overflow-y-auto p-1">
         <template v-for="p in platforms" :key="p.key">
-          <div
-            class="text-xs text-muted-foreground px-3 py-2 font-medium uppercase tracking-wider"
-          >
-            {{ p.name }}
-          </div>
-          <button
-            v-for="m in p.models"
-            :key="m.id"
-            class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
-            :class="`${p.key}:${m.id}` === selectedModel ? 'bg-accent' : ''"
-            @click="selectModel(`${p.key}:${m.id}`)"
-          >
+          <template v-if="p.models.some(m => m.enabled)">
+            <div
+              class="text-xs text-muted-foreground px-3 py-2 font-medium uppercase tracking-wider"
+            >
+              {{ p.name }}
+            </div>
+            <button
+              v-for="m in p.models"
+              :key="m.id"
+              v-show="m.enabled"
+              class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+              :class="`${p.key}:${m.id}` === selectedModel ? 'bg-accent' : ''"
+              @click="selectModel(`${p.key}:${m.id}`)"
+            >
             <Check
               v-if="`${p.key}:${m.id}` === selectedModel"
               :size="14"
@@ -77,6 +79,7 @@ const selectModel = (value: string) => {
             <span v-else class="w-[14px] shrink-0" />
             <span>{{ m.name }}</span>
           </button>
+          </template>
         </template>
       </div>
     </PopoverContent>

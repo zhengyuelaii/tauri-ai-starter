@@ -17,6 +17,14 @@ const baseURLs: Record<string, string> = {
 
 const providerCache = new Map<string, OpenAICompatibleProvider>();
 
+export function clearProviderCache(key?: string): void {
+  if (key) {
+    providerCache.delete(key);
+  } else {
+    providerCache.clear();
+  }
+}
+
 export function getStrategy(key: string): PlatformStrategy | undefined {
   return strategies.find((s) => s.key === key);
 }
@@ -28,11 +36,12 @@ export function getAllStrategies(): PlatformStrategy[] {
 export function requireProvider(
   platformKey: string,
   apiKey: string,
+  customBaseURL?: string,
 ): OpenAICompatibleProvider {
   const cached = providerCache.get(platformKey);
   if (cached) return cached;
 
-  const baseURL = baseURLs[platformKey];
+  const baseURL = customBaseURL ?? baseURLs[platformKey];
   if (!baseURL) {
     throw new Error(`Unknown platform: ${platformKey}`);
   }

@@ -1,6 +1,5 @@
 import { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   streamText,
   convertToModelMessages,
@@ -14,18 +13,13 @@ import {
   requireProvider,
   resolveModelId,
   getThinkingConfig,
-  getPlatformsMetadata,
 } from './providers';
-import type { PlatformsMetadata } from './providers/types';
 import type { ChatRequestDto } from './dto/chat-request.dto';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly configService: ConfigService) {}
-
-  getPlatforms(): PlatformsMetadata {
-    return getPlatformsMetadata();
-  }
+  constructor(private readonly settingsService: SettingsService) {}
 
   async streamChat(request: ChatRequestDto, res: Response) {
     const { messages } = request;
@@ -49,9 +43,7 @@ export class ChatService {
       return;
     }
 
-    const envKey =
-      platformKey === 'siliconflow' ? 'siliconflowApiKey' : 'deepseekApiKey';
-    const apiKey = this.configService.get<string>(envKey);
+    const apiKey = await this.settingsService.getApiKey(platformKey);
     if (!apiKey) {
       res
         .status(500)
@@ -59,7 +51,12 @@ export class ChatService {
       return;
     }
 
-    const provider = requireProvider(platformKey, apiKey);
+    const userBaseUrl = await this.settingsService.getBaseUrl(platformKey);
+    const baseURL = userBaseUrl ?? strategy.key === 'siliconflow'
+      ? 'https://api.siliconflow.cn/v1'
+      : 'https://api.deepseek.com/v1';
+
+    const provider = requireProvider(platformKey, apiKey, baseURL);
     const thinkingConfig = getThinkingConfig(platformKey, enableThinking);
 
     const modelOpts: Record<string, unknown> = {};
@@ -103,8 +100,6 @@ export class ChatService {
       },
     });
 
-    // toUIMessageStreamResponse returns a Web Response with SSE body (text/event-stream).
-    // Pipe it to Express via Node.js Readable.fromWeb.
     const response = result.toUIMessageStreamResponse({
       sendReasoning: enableThinking,
     });
