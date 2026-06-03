@@ -2,6 +2,7 @@ import { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
 import {
   streamText,
+  generateText,
   convertToModelMessages,
   tool,
   stepCountIs,
@@ -63,9 +64,9 @@ export class ChatService {
     }
 
     const userBaseUrl = await this.settingsService.getBaseUrl(platformKey);
-    const baseURL = userBaseUrl ?? strategy.key === 'siliconflow'
+    const baseURL = userBaseUrl ?? (strategy.key === 'siliconflow'
       ? 'https://api.siliconflow.cn/v1'
-      : 'https://api.deepseek.com/v1';
+      : 'https://api.deepseek.com/v1');
 
     const provider = requireProvider(platformKey, apiKey, baseURL);
     const thinkingConfig = getThinkingConfig(platformKey, enableThinking);
@@ -125,5 +126,41 @@ export class ChatService {
     } else {
       res.end();
     }
+  }
+
+  async generateTitle(provider: string, model: string, message: string) {
+    const platformKey = provider || 'siliconflow';
+    const modelKey = model || 'v4-flash';
+
+    const strategy = getStrategy(platformKey);
+    if (!strategy) {
+      throw new Error(`Unknown platform: ${platformKey}`);
+    }
+
+    const apiModelId = resolveModelId(platformKey, modelKey);
+    if (!apiModelId) {
+      throw new Error(`Unknown model "${modelKey}" for platform "${platformKey}"`);
+    }
+
+    const apiKey = await this.settingsService.getApiKey(platformKey);
+    if (!apiKey) {
+      throw new Error(`API key not configured for platform: ${platformKey}`);
+    }
+
+    const userBaseUrl = await this.settingsService.getBaseUrl(platformKey);
+    const baseURL = userBaseUrl ?? (strategy.key === 'siliconflow'
+      ? 'https://api.siliconflow.cn/v1'
+      : 'https://api.deepseek.com/v1');
+
+    const aiProvider = requireProvider(platformKey, apiKey, baseURL);
+    const langModel = aiProvider.languageModel(apiModelId);
+
+    const { text } = await generateText({
+      model: langModel,
+      system: '你是一个标题生成器。根据用户的消息，生成一个简短的对话标题（4-10个字）。只返回标题本身，不要加引号、标点或任何解释。',
+      prompt: message,
+    });
+
+    return text.trim();
   }
 }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { PanelLeft } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import ModelSelector from './ModelSelector.vue';
+import { Button } from '@/components/ui/button';
 
 const statusLabel: Record<string, string> = {
   submitted: '已提交',
@@ -19,11 +21,22 @@ defineProps<{
 
 const emit = defineEmits<{
   selectModel: [value: string];
+  toggleSidebar: [];
 }>();
 </script>
 
 <template>
-  <header class="flex items-center shrink-0 border-b px-4 py-2">
+  <header class="flex items-center shrink-0 px-4 py-2 gap-2 absolute top-0 left-0 right-0 z-10 bg-background/70 backdrop-blur-xl border-b border-border/40">
+    <Button
+      variant="ghost"
+      size="icon"
+      class="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+      title="切换侧边栏"
+      @click="emit('toggleSidebar')"
+    >
+      <PanelLeft :size="18" />
+    </Button>
+
     <ModelSelector
       :platforms="platforms"
       :selected-model="selectedModel"

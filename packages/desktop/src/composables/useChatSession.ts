@@ -1,7 +1,7 @@
 import { Chat } from '@ai-sdk/vue';
 import { DefaultChatTransport } from 'ai';
 import { ref, shallowRef, watch, computed } from 'vue';
-import { fetchSessions, createSession, deleteSession, updateSession, fetchMessages, addMessage } from '@/api';
+import { fetchSessions, createSession, deleteSession, updateSession, fetchMessages, addMessage, generateTitle } from '@/api';
 import type { SessionData } from '@/api';
 import type { UIMessage } from 'ai';
 
@@ -107,10 +107,35 @@ export function useChatSession() {
     () => chat.value.status,
     (status, oldStatus) => {
       if (status === 'ready' && oldStatus === 'streaming') {
-        saveNewMessages();
+        const sid = activeSessionId.value;
+        saveNewMessages().then(() => autoTitle(sid));
       }
     },
   );
+
+  async function autoTitle(sid: string) {
+    if (!sid) return;
+    const session = sessions.value.find((s) => s.id === sid);
+    if (!session || session.title !== '新对话') return;
+    const firstUser = chat.value.messages.find((m) => m.role === 'user');
+    if (!firstUser) return;
+    const text = firstUser.parts
+      .filter((p: any) => p.type === 'text')
+      .map((p: any) => p.text)
+      .join(' ');
+    if (!text.trim()) return;
+    try {
+      const title = await generateTitle(
+        session.providerKey ?? 'siliconflow',
+        session.modelId ?? 'v4-flash',
+        text.trim(),
+      );
+      await renameSession(sid, title);
+    } catch {
+      const fallback = text.trim().slice(0, 30) + (text.trim().length > 30 ? '...' : '');
+      await renameSession(sid, fallback);
+    }
+  }
 
   function sendMessage(
     text: string,
@@ -170,6 +195,12 @@ export function useChatSession() {
     }
   }
 
+  function resetToWelcome() {
+    activeSessionId.value = '';
+    chat.value = new Chat({ transport });
+    savedMessageIds.clear();
+  }
+
   return {
     sessions,
     activeSessionId,
@@ -179,6 +210,7 @@ export function useChatSession() {
     loadSessions,
     switchSession,
     newSession,
+    resetToWelcome,
     removeSession,
     renameSession,
     updateSessionMeta,

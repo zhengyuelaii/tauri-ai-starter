@@ -91,16 +91,16 @@ const isToolPhase = computed(() => {
       class="leading-relaxed"
       :class="
         message.role === 'user'
-          ? 'max-w-[85%] bg-blue-700 text-white rounded-2xl rounded-br-lg px-4 py-2.5 whitespace-pre-wrap break-words'
+          ? 'max-w-[85%] bg-blue-700 text-white rounded-2xl rounded-br-lg px-4 py-2.5 whitespace-pre-wrap wrap-break-word'
           : 'max-w-full text-foreground'
       "
     >
       <!-- Loading animation -->
       <div v-if="isEmpty" class="flex items-center py-1">
         <div class="flex items-end gap-0.5 h-3.5">
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-1.5" />
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-1.5" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
         </div>
       </div>
 
@@ -129,7 +129,7 @@ const isToolPhase = computed(() => {
             </summary>
             <div
               ref="reasoningRef"
-              class="px-3 py-2.5 text-sm text-purple-400 leading-relaxed whitespace-pre-wrap max-h-[150px] overflow-y-auto border-t border-white/5"
+              class="px-3 py-2.5 text-sm text-purple-400 leading-relaxed whitespace-pre-wrap max-h-37.5 overflow-y-auto border-t border-white/5"
             >
               {{ part.text }}
             </div>
@@ -182,7 +182,7 @@ const isToolPhase = computed(() => {
               class="flex gap-2.5 mt-2 items-start"
             >
               <span class="shrink-0 text-xs text-muted-foreground bg-white/5 rounded px-1.5 py-0.5">输入</span>
-              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-[200px] overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).input, null, 2) }}</pre>
+              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-50 overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).input, null, 2) }}</pre>
             </div>
             <hr
               v-if="(part as any).input && (part as any).output"
@@ -193,7 +193,7 @@ const isToolPhase = computed(() => {
               class="flex gap-2.5 mt-2 items-start"
             >
               <span class="shrink-0 text-xs text-muted-foreground bg-white/5 rounded px-1.5 py-0.5">输出</span>
-              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-[200px] overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).output, null, 2) }}</pre>
+              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-50 overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).output, null, 2) }}</pre>
             </div>
             <div
               v-if="(part as any).state === 'output-error'"
@@ -211,9 +211,9 @@ const isToolPhase = computed(() => {
         class="flex items-center gap-2.5 mt-2.5 pt-2.5 text-sm text-muted-foreground border-t border-white/5"
       >
         <div class="flex items-end gap-0.5 h-3.5">
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-1.5" />
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
-          <span class="w-[3px] rounded-sm bg-gradient-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-1.5" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
+          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
         </div>
         <span>正在生成回复...</span>
       </div>

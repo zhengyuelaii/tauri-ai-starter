@@ -37,7 +37,7 @@ export class SessionsService {
       createdAt: now,
       updatedAt: now,
     }).run();
-    return { id, title: dto.title ?? '新对话', createdAt: now, updatedAt: now };
+    return { id, title: dto.title ?? '新对话', providerKey: dto.providerKey ?? null, modelId: dto.modelId ?? null, enableThinking: dto.enableThinking ?? false, createdAt: now, updatedAt: now };
   }
 
   async updateSession(id: string, dto: UpdateSessionDto) {

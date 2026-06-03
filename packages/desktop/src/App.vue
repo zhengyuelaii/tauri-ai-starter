@@ -18,7 +18,7 @@ const {
   isBusy,
   loadSessions,
   switchSession,
-  newSession,
+  resetToWelcome,
   removeSession,
   renameSession,
   sendMessage,
@@ -147,8 +147,8 @@ function onSend() {
   input.value = '';
 }
 
-async function handleNewSession() {
-  await newSession();
+function handleNewSession() {
+  resetToWelcome();
 }
 
 async function handleDeleteSession(id: string) {
@@ -183,10 +183,9 @@ function handleSelectSession(id: string) {
       @delete="handleDeleteSession"
       @rename="handleRenameSession"
       @new="handleNewSession"
-      @toggle="sidebarCollapsed = !sidebarCollapsed"
     />
 
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 relative">
       <AppHeader
         :platforms="platforms"
         :selected-model="selectedModel"
@@ -194,14 +193,15 @@ function handleSelectSession(id: string) {
         :status="chat.status"
         :error="chat.error ?? undefined"
         @select-model="selectedModel = $event"
+        @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
       />
 
       <main
         ref="messagesContainer"
-        class="flex-1 overflow-y-auto px-6 py-4 scroll-smooth chat-messages"
+        class="flex-1 overflow-y-auto px-6 pt-16 pb-32 scroll-smooth chat-messages"
       >
         <div
-          v-if="!activeSessionId"
+          v-if="!activeSessionId || chat.messages.length === 0"
           class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
         >
           <div class="opacity-40">

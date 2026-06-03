@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Settings, Server, Box } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import {
@@ -23,6 +24,19 @@ defineProps<{
   refreshPlatforms: () => Promise<void>;
 }>();
 
+const open = ref(false);
+
+function onOpenChange(value: boolean) {
+  open.value = value;
+  if (!value) {
+    setTimeout(() => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }, 0);
+  }
+}
+
 const tabs = [
   { id: 'general', label: '通用', icon: Settings },
   { id: 'providers', label: '提供商', icon: Server },
@@ -31,7 +45,7 @@ const tabs = [
 </script>
 
 <template>
-  <Dialog>
+  <Dialog v-model:open="open" @update:open="onOpenChange">
     <DialogTrigger as-child>
       <slot name="trigger" />
     </DialogTrigger>
