@@ -1,4 +1,5 @@
-import type { PlatformStrategy, ModelDefinition } from './types';
+import type { PlatformStrategy, ModelDefinition, ThinkingOptions } from './types';
+import { modelIdFromKey } from './types';
 
 const models: ModelDefinition[] = [
   {
@@ -18,17 +19,15 @@ const models: ModelDefinition[] = [
 export const deepseekStrategy: PlatformStrategy = {
   key: 'deepseek',
   name: 'DeepSeek',
+  defaultBaseURL: 'https://api.deepseek.com/v1',
   models,
+  getModelId: modelIdFromKey(models),
 
-  getModelId(modelKey: string): string | undefined {
-    return models.find((m) => m.id === modelKey)?.modelId;
-  },
-
-  configureThinking(enableThinking: boolean) {
+  configureThinking({ enabled }: ThinkingOptions) {
     return {
       providerOptions: {
         deepseek: {
-          thinking: { type: enableThinking ? 'enabled' : 'disabled' },
+          thinking: { type: enabled ? 'enabled' : 'disabled' },
         },
       },
     };

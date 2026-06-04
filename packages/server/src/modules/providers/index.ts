@@ -4,16 +4,14 @@ import type {
   PlatformStrategy,
   PlatformsMetadata,
   ThinkingConfig,
+  ThinkingOptions,
 } from './types';
+
+export type { ThinkingOptions };
 import { siliconflowStrategy } from './siliconflow.strategy';
 import { deepseekStrategy } from './deepseek.strategy';
 
 const strategies: PlatformStrategy[] = [siliconflowStrategy, deepseekStrategy];
-
-const baseURLs: Record<string, string> = {
-  siliconflow: 'https://api.siliconflow.cn/v1',
-  deepseek: 'https://api.deepseek.com/v1',
-};
 
 const providerCache = new Map<string, OpenAICompatibleProvider>();
 
@@ -41,7 +39,8 @@ export function requireProvider(
   const cached = providerCache.get(platformKey);
   if (cached) return cached;
 
-  const baseURL = customBaseURL ?? baseURLs[platformKey];
+  const strategy = getStrategy(platformKey);
+  const baseURL = customBaseURL ?? strategy?.defaultBaseURL;
   if (!baseURL) {
     throw new Error(`Unknown platform: ${platformKey}`);
   }
@@ -64,11 +63,11 @@ export function resolveModelId(
 
 export function getThinkingConfig(
   platformKey: string,
-  enableThinking: boolean,
+  options: ThinkingOptions,
 ): ThinkingConfig {
   const strategy = getStrategy(platformKey);
   if (!strategy) return {};
-  return strategy.configureThinking(enableThinking);
+  return strategy.configureThinking(options);
 }
 
 export function getPlatformsMetadata(): PlatformsMetadata {

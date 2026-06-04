@@ -15,7 +15,7 @@ import {
   requireProvider,
   resolveModelId,
   getThinkingConfig,
-} from './providers';
+} from '../providers';
 import type { ChatRequestDto } from './dto/chat-request.dto';
 import { SettingsService } from '../settings/settings.service';
 import { SessionsService } from '../sessions/sessions.service';
@@ -45,19 +45,14 @@ export class ChatService {
       return;
     }
 
-    const apiKey = await this.settingsService.getApiKey(platformKey);
-    if (!apiKey) {
-      res.status(500).json({ error: `API key not configured for platform: ${platformKey}` });
+    const config = await this.settingsService.getProviderConfig(platformKey);
+    if (!config.apiKey) {
+      res.status(400).json({ error: `API key not configured for platform: ${platformKey}` });
       return;
     }
 
-    const userBaseUrl = await this.settingsService.getBaseUrl(platformKey);
-    const baseURL = userBaseUrl ?? (strategy.key === 'siliconflow'
-      ? 'https://api.siliconflow.cn/v1'
-      : 'https://api.deepseek.com/v1');
-
-    const provider = requireProvider(platformKey, apiKey, baseURL);
-    const thinkingConfig = getThinkingConfig(platformKey, enableThinking);
+    const provider = requireProvider(platformKey, config.apiKey, config.baseUrl ?? undefined);
+    const thinkingConfig = getThinkingConfig(platformKey, { enabled: enableThinking });
 
     const modelOpts: Record<string, unknown> = {};
     if (thinkingConfig.transformRequestBody) {
@@ -135,24 +130,30 @@ export class ChatService {
       throw new Error(`Unknown model "${modelKey}" for platform "${platformKey}"`);
     }
 
-    const apiKey = await this.settingsService.getApiKey(platformKey);
-    if (!apiKey) {
+    const config = await this.settingsService.getProviderConfig(platformKey);
+    if (!config.apiKey) {
       throw new Error(`API key not configured for platform: ${platformKey}`);
     }
 
-    const userBaseUrl = await this.settingsService.getBaseUrl(platformKey);
-    const baseURL = userBaseUrl ?? (strategy.key === 'siliconflow'
-      ? 'https://api.siliconflow.cn/v1'
-      : 'https://api.deepseek.com/v1');
+    const aiProvider = requireProvider(platformKey, config.apiKey, config.baseUrl ?? undefined);
 
-    const aiProvider = requireProvider(platformKey, apiKey, baseURL);
-    const langModel = aiProvider.languageModel(apiModelId);
+    const thinkingConfig = getThinkingConfig(platformKey, { enabled: false });
+    const modelOpts: Record<string, unknown> = {};
+    if (thinkingConfig.transformRequestBody) {
+      modelOpts.transformRequestBody = thinkingConfig.transformRequestBody;
+    }
+    const langModel = aiProvider.languageModel(apiModelId, modelOpts);
 
-    const { text } = await generateText({
+    const generateOptions: Record<string, unknown> = {
       model: langModel,
       system: '你是一个标题生成器。根据用户的消息，生成一个简短的对话标题（4-10个字）。只返回标题本身，不要加引号、标点或任何解释。',
       prompt: message,
-    });
+    };
+    if (thinkingConfig.providerOptions) {
+      generateOptions.providerOptions = thinkingConfig.providerOptions;
+    }
+
+    const { text } = await generateText(generateOptions as any);
 
     return text.trim();
   }

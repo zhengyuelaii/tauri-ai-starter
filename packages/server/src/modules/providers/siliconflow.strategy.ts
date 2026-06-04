@@ -1,4 +1,5 @@
-import type { PlatformStrategy, ModelDefinition } from './types';
+import type { PlatformStrategy, ModelDefinition, ThinkingOptions } from './types';
+import { modelIdFromKey } from './types';
 
 const models: ModelDefinition[] = [
   {
@@ -18,17 +19,15 @@ const models: ModelDefinition[] = [
 export const siliconflowStrategy: PlatformStrategy = {
   key: 'siliconflow',
   name: 'SiliconFlow',
+  defaultBaseURL: 'https://api.siliconflow.cn/v1',
   models,
+  getModelId: modelIdFromKey(models),
 
-  getModelId(modelKey: string): string | undefined {
-    return models.find((m) => m.id === modelKey)?.modelId;
-  },
-
-  configureThinking(enableThinking: boolean) {
+  configureThinking({ enabled }: ThinkingOptions) {
     return {
       transformRequestBody: (body: any) => ({
         ...body,
-        enable_thinking: enableThinking,
+        enable_thinking: enabled,
       }),
     };
   },

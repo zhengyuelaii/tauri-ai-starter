@@ -216,4 +216,19 @@ describe('SettingsService', () => {
       expect(sf?.baseUrl).toBe('https://api.siliconflow.cn/v1');
     });
   });
+
+  describe('getProviderConfig', () => {
+    it('should return both apiKey and baseUrl in one query', async () => {
+      await service.connectProvider('siliconflow', 'sk-test', 'https://custom.api.com/v1');
+      const config = await service.getProviderConfig('siliconflow');
+      expect(config.apiKey).toBe('sk-test');
+      expect(config.baseUrl).toBe('https://custom.api.com/v1');
+    });
+
+    it('should return nulls for unknown provider', async () => {
+      const config = await service.getProviderConfig('nonexistent');
+      expect(config.apiKey).toBeNull();
+      expect(config.baseUrl).toBeNull();
+    });
+  });
 });

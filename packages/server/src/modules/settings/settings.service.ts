@@ -3,7 +3,7 @@ import { eq, like } from 'drizzle-orm';
 import { db, SETTINGS_DB, type SettingsDatabase } from './db';
 import { providerConfigs, modelSettings } from './db/schema';
 import { encrypt, decrypt, generateSalt } from './crypto';
-import { getAllStrategies, clearProviderCache } from '../chat/providers';
+import { getAllStrategies, clearProviderCache } from '../providers';
 
 export interface ProviderInfo {
   key: string;
@@ -51,12 +51,7 @@ export class SettingsService {
 
     const providers = strategies.map((s) => {
       const cfg = connectedMap.get(s.key);
-      const defaultBaseUrl =
-        s.key === 'siliconflow'
-          ? 'https://api.siliconflow.cn/v1'
-          : s.key === 'deepseek'
-            ? 'https://api.deepseek.com/v1'
-            : null;
+      const defaultBaseUrl = s.defaultBaseURL ?? null;
 
       return {
         key: s.key,
@@ -143,25 +138,27 @@ export class SettingsService {
       .run();
   }
 
-  async getApiKey(providerKey: string): Promise<string | null> {
+  async getProviderConfig(providerKey: string): Promise<{
+    apiKey: string | null;
+    baseUrl: string | null;
+  }> {
     const row = this.db
       .select()
       .from(providerConfigs)
       .where(eq(providerConfigs.key, providerKey))
       .get();
 
-    if (!row) return null;
-    return decrypt(row.apiKey, row.iv, row.salt, row.tag);
+    if (!row) return { apiKey: null, baseUrl: null };
+    const apiKey = decrypt(row.apiKey, row.iv, row.salt, row.tag);
+    return { apiKey, baseUrl: row.baseUrl ?? null };
+  }
+
+  async getApiKey(providerKey: string): Promise<string | null> {
+    return (await this.getProviderConfig(providerKey)).apiKey;
   }
 
   async getBaseUrl(providerKey: string): Promise<string | null> {
-    const row = this.db
-      .select()
-      .from(providerConfigs)
-      .where(eq(providerConfigs.key, providerKey))
-      .get();
-
-    return row?.baseUrl ?? null;
+    return (await this.getProviderConfig(providerKey)).baseUrl;
   }
 
   async getPlatformsMetadata(): Promise<PlatformsResponse> {
