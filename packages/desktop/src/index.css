@@ -129,10 +129,9 @@
     -moz-osx-font-smoothing: grayscale;
     }
   ::selection {
-    background-color: hsl(var(--primary) / 0.15);
-  }
-  body, body * {
-    -webkit-user-select: auto;
-    user-select: auto;
+    background-color: color-mix(in srgb, var(--primary) 15%, transparent);
   }
 }
+
+/* Tauri custom titlebar: drag handled via JS startDragging() API,
+   not CSS app-region, to avoid WKWebView text-selection bug */

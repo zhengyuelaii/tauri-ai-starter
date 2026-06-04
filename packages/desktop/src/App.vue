@@ -7,7 +7,7 @@ import { useToast } from './composables/useToast';
 import { BASE_URL } from './api/constants';
 import { fetchWithTimeout } from './api/utils';
 import Sidebar from './components/layout/Sidebar.vue';
-import AppHeader from './components/layout/AppHeader.vue';
+import TitleBar from './components/layout/TitleBar.vue';
 import ChatMessage from './components/chat/ChatMessage.vue';
 import ChatInput from './components/chat/ChatInput.vue';
 import ToastProvider from './components/shared/ToastProvider.vue';
@@ -114,41 +114,43 @@ async function handleSelectSession(id: string) {
 </script>
 
 <template>
-  <div class="flex h-screen bg-background">
+  <div class="flex flex-col h-screen bg-background relative">
     <ToastProvider />
 
-    <Sidebar
-      :collapsed="sidebarCollapsed"
-      :sessions="sessions"
-      :active-id="activeSessionId"
+    <TitleBar
+      class="absolute top-0 left-0 right-0 z-10"
       :platforms="platforms"
-      :refresh-platforms="refreshPlatforms"
-      @select="handleSelectSession"
-      @delete="handleDeleteSession"
-      @rename="handleRenameSession"
-      @new="handleNewSession"
+      :selected-model="selectedModel"
+      :server-connected="serverConnected"
+      :status="chat.status"
+      :error="chat.error ?? undefined"
+      @select-model="selectedModel = $event"
+      @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
     />
 
-    <div class="flex-1 flex flex-col min-w-0 relative">
-      <AppHeader
+    <div class="flex flex-1 min-h-0">
+      <Sidebar
+        :collapsed="sidebarCollapsed"
+        :sessions="sessions"
+        :active-id="activeSessionId"
         :platforms="platforms"
-        :selected-model="selectedModel"
-        :server-connected="serverConnected"
-        :status="chat.status"
-        :error="chat.error ?? undefined"
-        @select-model="selectedModel = $event"
-        @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
+        :refresh-platforms="refreshPlatforms"
+        @select="handleSelectSession"
+        @delete="handleDeleteSession"
+        @rename="handleRenameSession"
+        @new="handleNewSession"
       />
 
-      <main
-        ref="messagesContainer"
-        tabindex="-1"
-        class="flex-1 overflow-y-auto px-6 pt-16 scroll-smooth chat-messages"
-      >
-        <div class="max-w-7xl mx-auto min-w-0 h-full">
+      <div class="flex-1 flex flex-col min-w-0 relative">
+        <main
+          ref="messagesContainer"
+          tabindex="-1"
+          class="flex-1 overflow-y-auto px-6 scroll-smooth chat-messages"
+        >
+        <div class="max-w-7xl mx-auto min-w-0 h-full pt-12">
         <div
           v-if="!activeSessionId || chat.messages.length === 0"
-          class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 -mt-8"
+          class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
         >
           <div class="w-14 h-14 rounded-2xl bg-accent/60 flex items-center justify-center">
             <svg
@@ -199,6 +201,7 @@ async function handleSelectSession(id: string) {
         @update:enable-thinking="enableThinking = $event"
       />
     </div>
+  </div>
   </div>
 </template>
 

@@ -16,6 +16,28 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .manage(ServerProcess(Mutex::new(None)))
         .setup(|app| {
+            // Create the main window programmatically for overlay titlebar support
+            let window_builder = tauri::WebviewWindowBuilder::new(
+                app,
+                "main",
+                tauri::WebviewUrl::App("/".into()),
+            )
+            .title("desktop")
+            .inner_size(800.0, 600.0)
+            .center()
+            .focused(true)
+            .decorations(true);
+
+            #[cfg(target_os = "macos")]
+            let window_builder = window_builder
+                .title_bar_style(tauri::TitleBarStyle::Overlay)
+                .hidden_title(true)
+                .traffic_light_position(tauri::LogicalPosition::new(12.0, 18.0));
+
+            let _window = window_builder
+                .build()
+                .expect("failed to create main window");
+
             match app.shell().sidecar("binaries/server") {
                 Ok(sidecar_command) => match sidecar_command.spawn() {
                     Ok((mut rx, child)) => {

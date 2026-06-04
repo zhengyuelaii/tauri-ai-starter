@@ -75,7 +75,7 @@ function cancelDelete() {
     :class="collapsed ? 'w-0 border-r-0' : 'w-65'"
   >
     <div class="w-65 flex flex-col h-full">
-    <div class="px-3 pt-3 pb-2">
+    <div class="px-3 pt-12 pb-2">
       <Button
         variant="outline"
         class="w-full justify-start gap-2.5 text-sm font-medium rounded-xl border-border/50 bg-accent/40 text-foreground/80 hover:text-foreground hover:bg-accent/60 hover:border-border/80 hover:shadow-sm transition-all duration-200 h-9"
