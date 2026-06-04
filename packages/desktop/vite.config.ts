@@ -14,7 +14,7 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@tauri-monorepo/shared": path.resolve(__dirname, "../../shared/src/index.ts"),
+      "@nativai-template/shared": path.resolve(__dirname, "../../shared/src/index.ts"),
     },
   },
 

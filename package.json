@@ -1,18 +1,18 @@
 {
-  "name": "tauri-monorepo-app",
+  "name": "nativai-template",
   "version": "1.0.0",
-  "description": "",
+  "description": "Desktop AI Chat app template built with Tauri v2 + Vue 3 + NestJS. Multi-model support, cross-platform, clean and extensible codebase.",
   "private": true,
   "main": "index.js",
   "scripts": {
-    "tauri": "pnpm --filter @tauri-monorepo/desktop tauri",
-    "tauri:dev": "pnpm --filter @tauri-monorepo/desktop tauri dev",
-    "dev": "pnpm --filter @tauri-monorepo/shared build && node packages/desktop/scripts/dev.cjs",
-    "web:dev": "pnpm --filter @tauri-monorepo/desktop dev",
-    "server:dev": "pnpm --filter @tauri-monorepo/server start:dev",
-    "server:build": "pnpm --filter @tauri-monorepo/server build",
-    "server:test": "pnpm --filter @tauri-monorepo/server test",
-    "desktop:test": "pnpm --filter @tauri-monorepo/desktop test"
+    "tauri": "pnpm --filter @nativai-template/desktop tauri",
+    "tauri:dev": "pnpm --filter @nativai-template/desktop tauri dev",
+    "dev": "pnpm --filter @nativai-template/shared build && node packages/desktop/scripts/dev.cjs",
+    "web:dev": "pnpm --filter @nativai-template/desktop dev",
+    "server:dev": "pnpm --filter @nativai-template/server start:dev",
+    "server:build": "pnpm --filter @nativai-template/server build",
+    "server:test": "pnpm --filter @nativai-template/server test",
+    "desktop:test": "pnpm --filter @nativai-template/desktop test"
   },
   "keywords": [],
   "author": "",

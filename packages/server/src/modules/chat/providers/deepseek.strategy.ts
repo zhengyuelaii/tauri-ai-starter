@@ -17,7 +17,7 @@ const models: ModelDefinition[] = [
 
 export const deepseekStrategy: PlatformStrategy = {
   key: 'deepseek',
-  name: 'DeepSeek官方',
+  name: 'DeepSeek',
   models,
 
   getModelId(modelKey: string): string | undefined {

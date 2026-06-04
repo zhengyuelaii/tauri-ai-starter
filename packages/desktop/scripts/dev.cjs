@@ -45,5 +45,5 @@ function start(name, args) {
 }
 
 console.log("[dev] Starting Vite + NestJS...");
-start("Vite", ["--filter", "@tauri-monorepo/desktop", "dev"]);
-start("NestJS", ["--filter", "@tauri-monorepo/server", "start:dev"]);
+start("Vite", ["--filter", "@nativai-template/desktop", "dev"]);
+start("NestJS", ["--filter", "@nativai-template/server", "start:dev"]);

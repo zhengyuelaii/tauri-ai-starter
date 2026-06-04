@@ -1,5 +1,5 @@
 {
-  "name": "@tauri-monorepo/server",
+  "name": "@nativai-template/server",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:sidecar": "pnpm --filter @tauri-monorepo/shared build && tsc --project tsconfig.build.json --incremental false && node scripts/build-sidecar.js",
+    "build:sidecar": "pnpm --filter @nativai-template/shared build && tsc --project tsconfig.build.json --incremental false && node scripts/build-sidecar.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -26,7 +26,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
-    "@tauri-monorepo/shared": "workspace:*",
+    "@nativai-template/shared": "workspace:*",
     "ai": "^6.0.193",
     "better-sqlite3": "^12.10.0",
     "class-transformer": "^0.5.1",
@@ -81,11 +81,11 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@tauri-monorepo/shared$": "<rootDir>/../node_modules/@tauri-monorepo/shared/src/index.ts",
-      "^@tauri-monorepo/shared/(.*)$": "<rootDir>/../node_modules/@tauri-monorepo/shared/src/$1"
+      "^@nativai-template/shared$": "<rootDir>/../node_modules/@nativai-template/shared/src/index.ts",
+      "^@nativai-template/shared/(.*)$": "<rootDir>/../node_modules/@nativai-template/shared/src/$1"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!@tauri-monorepo/.*)"
+      "node_modules/(?!@nativai-template/.*)"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"

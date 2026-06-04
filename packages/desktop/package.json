@@ -1,5 +1,5 @@
 {
-  "name": "@tauri-monorepo/desktop",
+  "name": "@nativai-template/desktop",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -18,7 +18,7 @@
     "@shikijs/themes": "^4.1.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
-    "@tauri-monorepo/shared": "workspace:*",
+    "@nativai-template/shared": "workspace:*",
     "@vueuse/core": "^14.3.0",
     "ai": "^6.0.193",
     "class-variance-authority": "^0.7.1",
