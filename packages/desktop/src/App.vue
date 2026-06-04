@@ -148,28 +148,29 @@ async function handleSelectSession(id: string) {
         <div class="max-w-7xl mx-auto min-w-0 h-full">
         <div
           v-if="!activeSessionId || chat.messages.length === 0"
-          class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
+          class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 -mt-8"
         >
-          <div class="opacity-40">
+          <div class="w-14 h-14 rounded-2xl bg-accent/60 flex items-center justify-center">
             <svg
-              width="48"
-              height="48"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="1.5"
               stroke-linecap="round"
               stroke-linejoin="round"
+              class="text-foreground/60"
             >
               <path
                 d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
               />
             </svg>
           </div>
-          <h2 class="text-xl font-medium text-foreground">
+          <h2 class="text-2xl font-semibold text-foreground tracking-tight">
             有什么我可以帮助你的？
           </h2>
-          <p class="text-sm">
+          <p class="text-sm text-muted-foreground/50">
             {{ currentModel?.name ?? '' }}
             <template v-if="currentModel?.name && providerLabel"> · </template>
             {{ providerLabel }}

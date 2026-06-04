@@ -37,13 +37,13 @@ const emit = defineEmits<{
       <PanelLeft :size="18" />
     </Button>
 
+    <div class="flex-1" />
+
     <ModelSelector
       :platforms="platforms"
       :selected-model="selectedModel"
       @select="emit('selectModel', $event)"
     />
-
-    <div class="flex-1" />
 
     <!-- Connection status -->
     <div

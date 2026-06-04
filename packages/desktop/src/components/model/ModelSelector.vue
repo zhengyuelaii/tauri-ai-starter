@@ -41,7 +41,7 @@ const selectModel = (value: string) => {
     <PopoverTrigger as-child>
       <Button
         variant="ghost"
-        class="gap-1.5 text-sm font-normal"
+        class="gap-1.5 text-[13px] font-normal h-7"
       >
         <span class="truncate max-w-[200px]">
           {{ currentPlatform?.name ?? '选择模型' }}

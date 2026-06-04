@@ -62,7 +62,7 @@ const isStreaming = computed(
 <template>
   <div ref="rootRef" data-chat-input class="absolute bottom-0 left-0 right-0 pt-10 pb-4 bg-linear-to-t from-background from-40% to-transparent">
     <div class="max-w-5xl mx-auto px-6">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md focus-within:shadow-lg transition-shadow">
+    <div class="bg-white rounded-2xl border border-gray-200/60 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] focus-within:shadow-[0_4px_24px_rgba(59,130,246,0.12)] transition-shadow duration-300">
       <!-- Top: textarea -->
       <textarea
         ref="textareaRef"
@@ -112,7 +112,7 @@ const isStreaming = computed(
           </button>
           <button
             v-else
-            class="w-8 h-8 rounded-lg bg-blue-700 hover:bg-blue-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors disabled:opacity-35"
+            class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center cursor-pointer shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:bg-blue-600"
             :disabled="!localInput.trim()"
             title="发送"
             @click="emit('send')"

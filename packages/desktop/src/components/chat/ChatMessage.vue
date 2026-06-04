@@ -105,7 +105,7 @@ const isToolPhase = computed(() => {
       class="leading-relaxed"
       :class="
         message.role === 'user'
-          ? 'max-w-[85%] bg-blue-700 text-white rounded-2xl rounded-br-lg px-4 py-2.5 whitespace-pre-wrap wrap-break-word'
+          ? 'max-w-[80%] bg-blue-700 text-white rounded-2xl rounded-br-md px-4 py-2.5 whitespace-pre-wrap wrap-break-word shadow-sm'
           : 'max-w-full min-w-0 text-foreground'
       "
     >

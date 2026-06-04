@@ -46,11 +46,12 @@ async function copy() {
 
 <style>
 .code-block-wrapper {
-  margin: 12px 0;
-  border-radius: 6px;
+  margin: 14px 0;
+  border-radius: 10px;
   border: 1px solid #d0d7de;
   max-width: 100%;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .code-block-header {
@@ -60,22 +61,23 @@ async function copy() {
   padding: 8px 16px;
   background: #f6f8fa;
   border-bottom: 1px solid #d0d7de;
-  font-size: 0.8em;
-  color: #57606a;
+  font-size: 0.78em;
+  font-weight: 500;
+  color: #656d76;
   user-select: none;
 }
 
 .code-block-header button {
   background: none;
   border: none;
-  color: #57606a;
+  color: #656d76;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 5px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
 .code-block-header button:hover {

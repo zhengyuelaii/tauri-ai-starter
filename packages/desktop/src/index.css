@@ -125,20 +125,11 @@
   body {
     @apply bg-background text-foreground;
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     }
-  /* macOS WKWebView may override user-select */
-  .settings-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  .settings-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .settings-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-  }
-  .settings-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
+  ::selection {
+    background-color: hsl(var(--primary) / 0.15);
   }
   body, body * {
     -webkit-user-select: auto;
