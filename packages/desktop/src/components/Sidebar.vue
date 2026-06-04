@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { SquarePen, Trash2, Sparkles, Settings, MoreHorizontal, Pencil } from 'lucide-vue-next';
 import SettingsDialog from './SettingsDialog.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -31,6 +32,7 @@ const hoveredId = ref<string | null>(null);
 const editingId = ref<string | null>(null);
 const editTitle = ref('');
 const kebabOpen = ref<Record<string, boolean>>({});
+const deleteTarget = ref<string | null>(null);
 
 function startEdit(id: string, title: string) {
   editingId.value = id;
@@ -48,6 +50,22 @@ function confirmEdit(id: string) {
 
 function cancelEdit() {
   editingId.value = null;
+}
+
+function handleDelete(id: string) {
+  deleteTarget.value = id;
+}
+
+function confirmDelete() {
+  if (deleteTarget.value) {
+    kebabOpen.value[deleteTarget.value] = false;
+    emit('delete', deleteTarget.value);
+  }
+  deleteTarget.value = null;
+}
+
+function cancelDelete() {
+  deleteTarget.value = null;
 }
 </script>
 
@@ -72,14 +90,14 @@ function cancelEdit() {
         @click="emit('new')"
       >
         <SquarePen :size="16" />
-        <span>新建对话</span>
+        <span>开始新对话</span>
       </Button>
     </div>
 
     <ScrollArea class="flex-1">
       <div class="px-3 flex flex-col gap-0.5">
         <div class="text-xs text-muted-foreground/60 px-3 py-2 font-medium">
-          历史会话
+          最近
         </div>
         <div
           v-for="s in sessions"
@@ -109,10 +127,13 @@ function cancelEdit() {
           <span v-else class="truncate flex-1">{{ s.title }}</span>
 
           <!-- Kebab menu -->
-          <Popover v-model:open="kebabOpen[s.id]" v-show="hoveredId === s.id && editingId !== s.id" @click.stop>
+          <Popover v-model:open="kebabOpen[s.id]" @click.stop>
             <PopoverTrigger as-child>
               <button
-                class="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-accent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                :class="[
+                  'h-6 w-6 shrink-0 inline-flex items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-accent cursor-pointer transition-opacity',
+                  (hoveredId === s.id || kebabOpen[s.id]) && editingId !== s.id ? 'opacity-100' : 'opacity-0'
+                ]"
               >
                 <MoreHorizontal :size="15" />
               </button>
@@ -127,7 +148,7 @@ function cancelEdit() {
               </button>
               <button
                 class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm hover:bg-accent hover:text-red-500 cursor-pointer"
-                @click="emit('delete', s.id); kebabOpen[s.id] = false"
+                @click="handleDelete(s.id)"
               >
                 <Trash2 :size="14" />
                 <span>删除</span>
@@ -159,4 +180,12 @@ function cancelEdit() {
     </div>
     </div>
   </aside>
+
+  <ConfirmDialog
+    :open="deleteTarget !== null"
+    title="删除会话"
+    description="确定要删除这个会话吗？此操作不可撤销。"
+    @confirm="confirmDelete"
+    @cancel="cancelDelete"
+  />
 </template>

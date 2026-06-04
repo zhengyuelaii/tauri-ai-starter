@@ -4,14 +4,20 @@ import { isToolUIPart, getToolName } from 'ai';
 import type { UIMessage } from 'ai';
 import { Comark } from '@comark/vue';
 import highlight from '@comark/vue/plugins/highlight';
-import githubDark from '@shikijs/themes/github-dark-default';
+import footnotes from '@comark/vue/plugins/footnotes';
+import math, { Math } from '@comark/vue/plugins/math';
+import githubLight from '@shikijs/themes/github-light-default';
 import java from '@shikijs/langs/java';
+import CodeBlock from './CodeBlock.vue';
+import 'katex/dist/katex.min.css';
 
 const plugins = [
+  footnotes(),
+  math(),
   highlight({
-    themes: { light: githubDark, dark: githubDark },
+    themes: { light: githubLight, dark: githubLight },
     languages: [java],
-    preStyles: true,
+    preStyles: false,
   }),
 ];
 
@@ -40,12 +46,26 @@ const isEmpty = computed(() => {
 
 const reasoningOpen = computed(() => {
   if (!props.isLast) return true;
-  if (props.status === 'ready' || props.status === 'error') return false;
+  if (isThinking.value) return true;
+  if (userToggled.value) return true;
+  return false;
+});
+
+const isThinking = computed(() => {
+  if (!props.isLast) return false;
+  if (props.status !== 'streaming' && props.status !== 'submitted') return false;
   const hasText = props.message.parts.some(
     (p: any) => p.type === 'text' && p.text.trim(),
   );
   return !hasText;
 });
+
+const userToggled = ref(false);
+const expanded = ref(false);
+
+function isLong(text: string): boolean {
+  return text.split('\n').length > 5 || text.length > 500;
+}
 
 const reasoningRef = ref<HTMLElement>();
 
@@ -73,6 +93,7 @@ const isToolPhase = computed(() => {
   const isInput = isTool && last.state === 'input-available';
   return isOutput || isInput;
 });
+
 </script>
 
 <template>
@@ -81,26 +102,19 @@ const isToolPhase = computed(() => {
     :class="message.role === 'user' ? 'items-end' : 'items-stretch'"
   >
     <div
-      v-if="message.role === 'assistant'"
-      class="text-xs text-muted-foreground mb-1"
-    >
-      AI
-    </div>
-
-    <div
       class="leading-relaxed"
       :class="
         message.role === 'user'
           ? 'max-w-[85%] bg-blue-700 text-white rounded-2xl rounded-br-lg px-4 py-2.5 whitespace-pre-wrap wrap-break-word'
-          : 'max-w-full text-foreground'
+          : 'max-w-full min-w-0 text-foreground'
       "
     >
       <!-- Loading animation -->
       <div v-if="isEmpty" class="flex items-center py-1">
-        <div class="flex items-end gap-0.5 h-3.5">
-          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-1.5" />
-          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
-          <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
+        <div class="flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0s" />
+          <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.2s" />
+          <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.4s" />
         </div>
       </div>
 
@@ -109,29 +123,36 @@ const isToolPhase = computed(() => {
         <div v-if="part.type === 'reasoning'" class="w-full mb-2.5">
           <details
             :open="reasoningOpen"
-            class="border border-white/10 rounded-lg overflow-hidden"
+            class="rounded-lg overflow-hidden group"
+            @toggle="userToggled = true"
           >
             <summary
-              class="cursor-pointer text-sm text-muted-foreground px-3 py-2 flex items-center gap-1.5 bg-black/15 hover:bg-black/25 transition-colors select-none"
+              class="cursor-pointer text-sm text-muted-foreground py-1 flex items-center gap-1.5 select-none"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="opacity-60 shrink-0"
-              ><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-              思考过程
+              <template v-if="isThinking">
+                <span class="flex items-center gap-0.5">
+                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0s" />
+                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.2s" />
+                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.4s" />
+                  <span>思考中...</span>
+                </span>
+              </template>
+              <template v-else>
+                <span>已思考</span>
+              </template>
+
+              <!-- Expand chevron -->
+              <span class="shrink-0 transition-transform duration-200 group-open:rotate-90 text-muted-foreground/60">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+              </span>
             </summary>
             <div
               ref="reasoningRef"
-              class="px-3 py-2.5 text-sm text-purple-400 leading-relaxed whitespace-pre-wrap max-h-37.5 overflow-y-auto border-t border-white/5"
+              class="border-t border-border"
             >
-              {{ part.text }}
+              <div class="py-2 text-sm text-muted-foreground/80 leading-relaxed whitespace-pre-wrap max-h-37.5 overflow-y-auto">
+                {{ part.text }}
+              </div>
             </div>
           </details>
         </div>
@@ -144,13 +165,26 @@ const isToolPhase = computed(() => {
             :markdown="part.text.replace(/^\n+/, '')"
             :plugins="plugins"
             :streaming="isLast && status === 'streaming'"
+            :components="{ pre: CodeBlock, math: Math }"
             caret
             class="prose-p:mb-2.5 prose-li:mb-1 prose-a:text-[#58a6ff] prose-strong:font-semibold"
           />
         </Suspense>
 
         <!-- Text (user) -->
-        <div v-else-if="part.type === 'text'">{{ part.text }}</div>
+        <div v-else-if="part.type === 'text'">
+          <div :class="[isLong(part.text) && !expanded ? 'line-clamp-5' : '', 'whitespace-pre-wrap']">
+            {{ part.text }}
+          </div>
+          <button
+            v-if="isLong(part.text)"
+            tabindex="-1"
+            class="text-xs text-blue-400 hover:text-blue-300 mt-1 cursor-pointer"
+            @click="expanded = !expanded"
+          >
+            {{ expanded ? '收起' : '展开全部' }}
+          </button>
+        </div>
 
         <!-- Tool call -->
         <div
@@ -162,10 +196,10 @@ const isToolPhase = computed(() => {
               (part as any).state === 'input-streaming' ||
               (part as any).state === 'output-available'
             "
-            class="bg-black/20 rounded-lg px-3 py-2"
+            class="border border-border rounded-lg px-3 py-2"
           >
             <summary
-              class="cursor-pointer text-sm flex items-center gap-1.5 text-muted-foreground"
+              class="cursor-pointer text-sm flex items-center gap-1.5 text-muted-foreground border-b border-border pb-2"
             >
               <span class="bg-amber-900 text-amber-300 text-xs px-1.5 py-px rounded font-medium">工具</span>
               {{ getToolName(part as any) || (part as any).type?.replace('tool-', '') }}
@@ -181,19 +215,19 @@ const isToolPhase = computed(() => {
               v-if="(part as any).input"
               class="flex gap-2.5 mt-2 items-start"
             >
-              <span class="shrink-0 text-xs text-muted-foreground bg-white/5 rounded px-1.5 py-0.5">输入</span>
-              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-50 overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).input, null, 2) }}</pre>
+              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">输入</span>
+              <div class="flex-1 text-xs text-muted-foreground max-h-50 overflow-y-auto whitespace-pre-wrap bg-white/10 rounded px-2 py-1">{{ JSON.stringify((part as any).input, null, 2) }}</div>
             </div>
             <hr
               v-if="(part as any).input && (part as any).output"
-              class="mt-2 mb-0 border-white/5"
+              class="mt-2 mb-0 border-border"
             />
             <div
               v-if="(part as any).output"
               class="flex gap-2.5 mt-2 items-start"
             >
-              <span class="shrink-0 text-xs text-muted-foreground bg-white/5 rounded px-1.5 py-0.5">输出</span>
-              <pre class="flex-1 m-0 text-xs text-muted-foreground overflow-x-auto max-h-50 overflow-y-auto whitespace-pre-wrap break-all">{{ JSON.stringify((part as any).output, null, 2) }}</pre>
+              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">输出</span>
+              <div class="flex-1 text-xs text-muted-foreground max-h-50 overflow-y-auto whitespace-pre-wrap bg-white/10 rounded px-2 py-1">{{ JSON.stringify((part as any).output, null, 2) }}</div>
             </div>
             <div
               v-if="(part as any).state === 'output-error'"
@@ -246,126 +280,210 @@ const isToolPhase = computed(() => {
   }
 }
 
-/* Comark markdown styles */
-.chat-messages :deep(.comark-content) {
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shiki line breaks — required for code highlighting */
+.chat-messages .shiki span.line {
+  display: block;
+}
+
+/* Comark markdown styles — GitHub-like */
+.chat-messages .comark-content {
   line-height: 1.7;
   word-break: break-word;
 }
 
-.chat-messages :deep(.comark-content h1),
-.chat-messages :deep(.comark-content h2),
-.chat-messages :deep(.comark-content h3),
-.chat-messages :deep(.comark-content h4) {
-  margin: 18px 0 8px;
+/* Headings — use regular CSS for Comark-rendered elements */
+.chat-messages .comark-content h1,
+.chat-messages .comark-content h2,
+.chat-messages .comark-content h3,
+.chat-messages .comark-content h4 {
   font-weight: 600;
-  line-height: 1.35;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.3;
+  margin: 24px 0 16px;
 }
 
-.chat-messages :deep(.comark-content h1) {
-  font-size: 1.5em;
+.chat-messages .comark-content h1 {
+  font-size: 1.75em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #d0d7de;
 }
-.chat-messages :deep(.comark-content h2) {
-  font-size: 1.3em;
+
+.chat-messages .comark-content h2 {
+  font-size: 1.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #d0d7de;
 }
-.chat-messages :deep(.comark-content h3) {
-  font-size: 1.1em;
+
+.chat-messages .comark-content h3 {
+  font-size: 1.15em;
 }
-.chat-messages :deep(.comark-content h4) {
+
+.chat-messages .comark-content h4 {
   font-size: 1em;
+  margin: 20px 0 10px;
 }
 
-.chat-messages :deep(.comark-content p) {
-  margin: 0 0 10px;
+/* Paragraphs */
+.chat-messages .comark-content p {
+  margin: 0 0 16px;
 }
 
-.chat-messages :deep(.comark-content a) {
+/* Links */
+.chat-messages .comark-content a {
   color: #58a6ff;
+  text-decoration: none;
 }
 
-.chat-messages :deep(.comark-content strong) {
+.chat-messages .comark-content a:hover {
+  text-decoration: underline;
+}
+
+/* Bold */
+.chat-messages .comark-content strong {
   font-weight: 600;
 }
 
-.chat-messages :deep(.comark-content ul),
-.chat-messages :deep(.comark-content ol) {
-  margin: 0 0 10px;
-  padding-left: 1.8em;
+/* Lists */
+.chat-messages .comark-content ul {
+  margin: 0 0 16px;
+  padding-left: 2em;
+  list-style-type: disc;
 }
 
-.chat-messages :deep(.comark-content li) {
-  margin-bottom: 4px;
+.chat-messages .comark-content ol {
+  margin: 0 0 16px;
+  padding-left: 2em;
+  list-style-type: decimal;
 }
 
-.chat-messages :deep(.comark-content blockquote) {
-  margin: 0 0 10px;
-  padding: 4px 14px;
-  border-left: 3px solid #58a6ff;
+.chat-messages .comark-content li {
+  margin-bottom: 0.25em;
+}
+
+.chat-messages .comark-content li > ul,
+.chat-messages .comark-content li > ol {
+  margin-top: 0.25em;
+}
+
+/* Blockquote */
+.chat-messages .comark-content blockquote {
+  margin: 0 0 16px;
+  padding: 0 1em;
+  border-left: 0.25em solid #d0d7de;
   color: #8b949e;
-  background: rgba(88, 166, 255, 0.06);
-  border-radius: 0 4px 4px 0;
 }
 
-.chat-messages :deep(.comark-content pre) {
-  margin: 12px 0;
-  padding: 14px 18px;
-  border-radius: 6px;
-  overflow-x: auto;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.88em;
-  line-height: 1.65;
-}
-
-.chat-messages :deep(.comark-content pre code) {
-  background: none;
-  color: inherit;
+/* Horizontal rule */
+.chat-messages .comark-content hr {
+  height: 1px;
   padding: 0;
-  font-size: inherit;
-  font-family: inherit;
+  margin: 24px 0;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
 }
 
-.chat-messages :deep(.comark-content :not(pre) > code) {
-  background: rgba(110, 118, 129, 0.25);
-  color: #f2a4a9;
+/* Tables */
+.chat-messages table {
+  width: 100%;
+  margin: 0 0 16px;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+
+.chat-messages th,
+.chat-messages td {
+  padding: 8px 13px;
+  border: 1px solid #d0d7de;
+  text-align: left;
+}
+
+.chat-messages th {
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-messages tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Images */
+.chat-messages .comark-content img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* Footnotes */
+.chat-messages .footnote-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.chat-messages .footnote-ref a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.chat-messages .footnote-ref a:hover {
+  text-decoration: underline;
+}
+
+.chat-messages .footnotes {
+  margin-top: 2rem;
+  font-size: 0.9em;
+  color: #8b949e;
+}
+
+.chat-messages .footnotes hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 1rem;
+}
+
+.chat-messages .footnotes h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.chat-messages .footnotes-list {
+  padding-left: 1.5em;
+}
+
+.chat-messages .footnotes-list li {
+  margin-bottom: 0.4em;
+}
+
+.chat-messages .footnote-backref {
+  color: #58a6ff;
+  text-decoration: none;
+  margin-left: 0.25em;
+}
+
+/* Inline code */
+.chat-messages .comark-content :not(pre) > code {
+  background: rgba(175, 184, 193, 0.3);
+  color: #cf222e;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9em;
 }
 
-.chat-messages :deep(.comark-content hr) {
-  margin: 20px 0;
-  border: none;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.chat-messages :deep(.comark-content table) {
-  width: 100%;
-  margin: 10px 0;
-  border-collapse: collapse;
-  font-size: 0.92em;
-}
-
-.chat-messages :deep(.comark-content th),
-.chat-messages :deep(.comark-content td) {
-  padding: 7px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  text-align: left;
-}
-
-.chat-messages :deep(.comark-content th) {
-  background: rgba(255, 255, 255, 0.05);
-  font-weight: 600;
-}
-
-.chat-messages :deep(.comark-content tr:nth-child(even) td) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.chat-messages :deep(.comark-content img) {
-  max-width: 100%;
-  border-radius: 6px;
+.chat-messages .comark-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
 }
 </style>

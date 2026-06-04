@@ -1,9 +1,10 @@
-import { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
 import {
   streamText,
   generateText,
   convertToModelMessages,
+  createUIMessageStream,
+  pipeUIMessageStreamToResponse,
   tool,
   stepCountIs,
 } from 'ai';
@@ -27,18 +28,11 @@ export class ChatService {
   ) {}
 
   async streamChat(request: ChatRequestDto, res: Response) {
-    let { messages } = request;
     const platformKey = request.provider ?? 'siliconflow';
     const modelKey = request.model ?? 'v4-flash';
     const enableThinking = request.enableThinking ?? false;
 
-    if (request.sessionId) {
-      const dbMessages = await this.sessionsService.getAllMessages(request.sessionId);
-      const dbIds = new Set(dbMessages.map((m) => m.id));
-      const newMessages = messages.filter((m) => !dbIds.has(m.id));
-      messages = [...dbMessages, ...newMessages] as any;
-    }
-
+    // Validate and prepare before streaming
     const strategy = getStrategy(platformKey);
     if (!strategy) {
       res.status(400).json({ error: `Unknown platform: ${platformKey}` });
@@ -47,19 +41,13 @@ export class ChatService {
 
     const apiModelId = resolveModelId(platformKey, modelKey);
     if (!apiModelId) {
-      res
-        .status(400)
-        .json({
-          error: `Unknown model "${modelKey}" for platform "${platformKey}"`,
-        });
+      res.status(400).json({ error: `Unknown model "${modelKey}" for platform "${platformKey}"` });
       return;
     }
 
     const apiKey = await this.settingsService.getApiKey(platformKey);
     if (!apiKey) {
-      res
-        .status(500)
-        .json({ error: `API key not configured for platform: ${platformKey}` });
+      res.status(500).json({ error: `API key not configured for platform: ${platformKey}` });
       return;
     }
 
@@ -77,55 +65,60 @@ export class ChatService {
     }
     const model = provider.languageModel(apiModelId, modelOpts);
 
-    const result = streamText({
-      model,
-      system:
-        '你是一个专业、严谨的AI助手。请保持严肃专业的语气，不要使用任何表情符号（emoji）。回答应简洁、准确、客观。',
-      messages: await convertToModelMessages(messages),
-      stopWhen: stepCountIs(5),
-      providerOptions: (thinkingConfig.providerOptions ?? {}) as any,
-      tools: {
-        weather: tool({
-          description: 'Get the weather in a location (fahrenheit)',
-          inputSchema: z.object({
-            location: z
-              .string()
-              .describe('The location to get the weather for'),
-          }),
-          execute: async ({ location }) => {
-            const temperature = Math.round(Math.random() * (90 - 32) + 32);
-            return { location, temperature };
+    // Build messages (session history + request messages)
+    let { messages } = request;
+    if (request.sessionId) {
+      const dbMessages = await this.sessionsService.getAllMessages(request.sessionId);
+      const dbIds = new Set(dbMessages.map((m) => m.id));
+      const newMessages = messages.filter((m) => !dbIds.has(m.id));
+      messages = [...dbMessages, ...newMessages] as any;
+    }
+
+    const modelMessages = await convertToModelMessages(messages);
+
+    const stream = createUIMessageStream({
+      execute: ({ writer }) => {
+        const result = streamText({
+          model,
+          system: '你是一个专业、严谨的AI助手。请保持严肃专业的语气，不要使用任何表情符号（emoji）。回答应简洁、准确、客观。',
+          messages: modelMessages,
+          stopWhen: stepCountIs(5),
+          providerOptions: (thinkingConfig.providerOptions ?? {}) as any,
+          tools: {
+            weather: tool({
+              description: 'Get the weather in a location (fahrenheit)',
+              inputSchema: z.object({
+                location: z.string().describe('The location to get the weather for'),
+              }),
+              execute: async ({ location }) => {
+                const temperature = Math.round(Math.random() * (90 - 32) + 32);
+                return { location, temperature };
+              },
+            }),
+            convertFahrenheitToCelsius: tool({
+              description: 'Convert a temperature in fahrenheit to celsius',
+              inputSchema: z.object({
+                temperature: z.number().describe('The temperature in fahrenheit to convert'),
+              }),
+              execute: async ({ temperature }) => {
+                const celsius = Math.round((temperature - 32) * (5 / 9));
+                return { celsius };
+              },
+            }),
           },
-        }),
-        convertFahrenheitToCelsius: tool({
-          description: 'Convert a temperature in fahrenheit to celsius',
-          inputSchema: z.object({
-            temperature: z
-              .number()
-              .describe('The temperature in fahrenheit to convert'),
+        });
+
+        writer.merge(
+          result.toUIMessageStream({
+            sendReasoning: enableThinking,
+            onError: (error) =>
+              error instanceof Error ? error.message : String(error),
           }),
-          execute: async ({ temperature }) => {
-            const celsius = Math.round((temperature - 32) * (5 / 9));
-            return { celsius };
-          },
-        }),
+        );
       },
     });
 
-    const response = result.toUIMessageStreamResponse({
-      sendReasoning: enableThinking,
-    });
-
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
-    res.status(response.status);
-
-    if (response.body) {
-      Readable.fromWeb(response.body as any).pipe(res);
-    } else {
-      res.end();
-    }
+    pipeUIMessageStreamToResponse({ stream, response: res });
   }
 
   async generateTitle(provider: string, model: string, message: string) {

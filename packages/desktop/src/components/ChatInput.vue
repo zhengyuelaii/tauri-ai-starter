@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue';
-import { Send, Square, Paperclip, Brain } from 'lucide-vue-next';
+import { ArrowUp, Square, Paperclip, Brain } from 'lucide-vue-next';
 
 const props = defineProps<{
   modelValue: string;
@@ -60,9 +60,9 @@ const isStreaming = computed(
 </script>
 
 <template>
-  <div class="absolute bottom-0 left-0 right-0 pt-6 pb-4 bg-linear-to-t from-background from-60% to-transparent">
+  <div ref="rootRef" data-chat-input class="absolute bottom-0 left-0 right-0 pt-10 pb-4 bg-linear-to-t from-background from-40% to-transparent">
     <div class="max-w-5xl mx-auto px-6">
-    <div class="bg-secondary rounded-2xl border border-transparent hover:shadow-[0_0_15px_3px_rgba(255,255,255,0.12)] focus-within:shadow-[0_0_20px_5px_rgba(255,255,255,0.18)] transition-shadow">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md focus-within:shadow-lg transition-shadow">
       <!-- Top: textarea -->
       <textarea
         ref="textareaRef"
@@ -70,7 +70,7 @@ const isStreaming = computed(
         placeholder="发送消息..."
         :disabled="disabled || isStreaming"
         rows="1"
-        class="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
+        class="w-full bg-transparent border-none outline-none text-gray-800 placeholder:text-gray-400 resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
         @keydown="handleKeydown"
         @compositionstart="isComposing = true"
         @compositionend="isComposing = false"
@@ -83,7 +83,7 @@ const isStreaming = computed(
           <button
             v-if="thinkingSupported"
             class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer"
-            :class="enableThinking ? 'text-blue-400 bg-blue-400/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'"
+            :class="enableThinking ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
             @click="emit('update:enableThinking', !enableThinking)"
           >
             <Brain :size="14" />
@@ -92,7 +92,7 @@ const isStreaming = computed(
 
           <!-- Attach file (placeholder) -->
           <button
-            class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <Paperclip :size="14" />
             <span>附件</span>
@@ -100,11 +100,11 @@ const isStreaming = computed(
         </div>
 
         <div class="flex items-center gap-1.5">
-          <span class="text-xs text-muted-foreground/50">Enter 发送，Shift+Enter 换行</span>
+          <span class="text-xs text-gray-400">Enter 发送，Shift+Enter 换行</span>
 
           <button
             v-if="isStreaming"
-            class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            class="w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors"
             title="停止生成"
             @click="emit('stop')"
           >
@@ -112,12 +112,12 @@ const isStreaming = computed(
           </button>
           <button
             v-else
-            class="w-8 h-8 rounded-full bg-blue-700 hover:bg-blue-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors disabled:opacity-35"
+            class="w-8 h-8 rounded-lg bg-blue-700 hover:bg-blue-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors disabled:opacity-35"
             :disabled="!localInput.trim()"
             title="发送"
             @click="emit('send')"
           >
-            <Send :size="14" />
+            <ArrowUp :size="16" />
           </button>
         </div>
       </div>

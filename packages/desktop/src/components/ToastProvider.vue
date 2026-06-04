@@ -25,7 +25,7 @@ const iconColor: Record<string, string> = {
 
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-24 right-4 z-9999 flex flex-col gap-2 pointer-events-none">
+    <div class="fixed top-4 right-4 z-9999 flex flex-col gap-2 pointer-events-none">
       <div
         v-for="t in toasts"
         :key="t.id"

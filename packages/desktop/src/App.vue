@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onMounted } from 'vue';
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue';
 import type { PlatformMeta } from './types';
 import { fetchPlatforms } from './api';
 import { useChatSession } from './composables/useChatSession';
@@ -15,7 +15,6 @@ const {
   sessions,
   activeSessionId,
   chat,
-  isBusy,
   loadSessions,
   switchSession,
   resetToWelcome,
@@ -87,6 +86,8 @@ watch(activeSessionId, (id) => {
   }
 });
 
+const inputHeight = ref(0);
+
 onMounted(async () => {
   const baseUrl = import.meta.env.DEV
     ? ''
@@ -106,17 +107,13 @@ onMounted(async () => {
   if (results[0].status === 'fulfilled' && results[0].value.ok) {
     serverConnected.value = true;
   }
-});
 
-const showLoading = computed(() => {
-  if (!isBusy.value) return false;
-  const messages = chat.value.messages;
-  if (messages.length === 0) return true;
-  const last = messages[messages.length - 1]!;
-  if (last.role !== 'assistant') return true;
-  if (last.parts.some((p: any) => p.type === 'reasoning')) return false;
-  const hasText = last.parts.some((p: any) => p.type === 'text' && p.text);
-  return !hasText;
+  const inputEl = document.querySelector('[data-chat-input]');
+  if (inputEl) {
+    new ResizeObserver(([entry]) => {
+      inputHeight.value = entry!.contentRect.height;
+    }).observe(inputEl);
+  }
 });
 
 const scrollToBottom = () => {
@@ -128,11 +125,30 @@ const scrollToBottom = () => {
   });
 };
 
-watch(() => chat.value.messages.length, scrollToBottom);
+let scrollTimer: ReturnType<typeof setInterval> | null = null;
+
 watch(
-  () => chat.value.messages[chat.value.messages.length - 1]?.parts?.length,
-  scrollToBottom,
+  () => chat.value.status,
+  (status) => {
+    if (status === 'streaming') {
+      if (!scrollTimer) {
+        scrollTimer = setInterval(scrollToBottom, 100);
+      }
+    } else {
+      if (scrollTimer) {
+        clearInterval(scrollTimer);
+        scrollTimer = null;
+      }
+      scrollToBottom();
+    }
+  },
 );
+
+watch(() => chat.value.messages, scrollToBottom);
+
+onUnmounted(() => {
+  if (scrollTimer) clearInterval(scrollTimer);
+});
 
 function onSend() {
   if (!input.value.trim() || !selectedModel.value) return;
@@ -164,8 +180,9 @@ async function handleRenameSession(id: string, title: string) {
   await renameSession(id, title);
 }
 
-function handleSelectSession(id: string) {
-  switchSession(id);
+async function handleSelectSession(id: string) {
+  await switchSession(id);
+  setTimeout(scrollToBottom, 50);
 }
 </script>
 
@@ -198,8 +215,10 @@ function handleSelectSession(id: string) {
 
       <main
         ref="messagesContainer"
-        class="flex-1 overflow-y-auto px-6 pt-16 pb-32 scroll-smooth chat-messages"
+        tabindex="-1"
+        class="flex-1 overflow-y-auto px-6 pt-16 scroll-smooth chat-messages"
       >
+        <div class="max-w-7xl mx-auto min-w-0 h-full">
         <div
           v-if="!activeSessionId || chat.messages.length === 0"
           class="flex flex-col items-center justify-center h-full text-muted-foreground gap-4"
@@ -238,20 +257,7 @@ function handleSelectSession(id: string) {
           :is-last="idx === chat.messages.length - 1"
         />
 
-        <div v-if="showLoading" class="flex py-2">
-          <div class="flex items-center gap-[3px]">
-            <span
-              class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
-            />
-            <span
-              class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
-              style="animation-delay: 0.2s"
-            />
-            <span
-              class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-[typingBounce_1.4s_infinite]"
-              style="animation-delay: 0.4s"
-            />
-          </div>
+        <div v-if="activeSessionId && chat.messages.length > 0" :style="{ height: (inputHeight + 24) + 'px' }" />
         </div>
       </main>
 
@@ -269,16 +275,4 @@ function handleSelectSession(id: string) {
 </template>
 
 <style>
-@keyframes typingBounce {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.4;
-  }
-  30% {
-    transform: translateY(-4px);
-    opacity: 1;
-  }
-}
 </style>
