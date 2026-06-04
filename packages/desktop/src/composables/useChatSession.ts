@@ -172,6 +172,12 @@ export function useChatSession() {
       return;
     }
 
+    updateSessionMeta({
+      providerKey: opts.provider,
+      modelId: opts.model,
+      enableThinking: opts.enableThinking,
+    });
+
     chat.value.sendMessage(
       { text },
       {

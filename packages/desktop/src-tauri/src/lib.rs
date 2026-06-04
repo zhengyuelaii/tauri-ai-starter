@@ -23,7 +23,7 @@ pub fn run() {
                 tauri::WebviewUrl::App("/".into()),
             )
             .title("desktop")
-            .inner_size(800.0, 600.0)
+            .inner_size(1280.0, 720.0)
             .center()
             .focused(true)
             .decorations(true);

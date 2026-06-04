@@ -117,8 +117,8 @@ function cancelDelete() {
           />
           <span v-else class="truncate flex-1 leading-tight">{{ s.title }}</span>
 
-          <Popover v-model:open="kebabOpen[s.id]" @click.stop>
-            <PopoverTrigger as-child>
+          <Popover v-model:open="kebabOpen[s.id]">
+            <PopoverTrigger as-child @click.stop>
               <button
                 :class="[
                   'h-6 w-6 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-accent cursor-pointer transition-all duration-150',

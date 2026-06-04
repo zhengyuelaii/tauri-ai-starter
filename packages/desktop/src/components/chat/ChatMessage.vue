@@ -45,7 +45,7 @@ const isEmpty = computed(() => {
 });
 
 const reasoningOpen = computed(() => {
-  if (!props.isLast) return true;
+  if (!props.isLast) return false;
   if (isThinking.value) return true;
   if (userToggled.value) return true;
   return false;
@@ -146,11 +146,8 @@ const isToolPhase = computed(() => {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
               </span>
             </summary>
-            <div
-              ref="reasoningRef"
-              class="border-t border-border"
-            >
-              <div class="py-2 text-sm text-muted-foreground/80 leading-relaxed whitespace-pre-wrap max-h-37.5 overflow-y-auto">
+            <div ref="reasoningRef">
+              <div class="py-2 text-sm text-muted-foreground/80 leading-relaxed whitespace-pre-wrap">
                 {{ part.text }}
               </div>
             </div>

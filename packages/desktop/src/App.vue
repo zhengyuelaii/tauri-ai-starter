@@ -122,8 +122,6 @@ async function handleSelectSession(id: string) {
       :platforms="platforms"
       :selected-model="selectedModel"
       :server-connected="serverConnected"
-      :status="chat.status"
-      :error="chat.error ?? undefined"
       @select-model="selectedModel = $event"
       @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
     />

@@ -7,19 +7,10 @@ import { Button } from '@/components/ui/button';
 
 const isMacOS = navigator.userAgent.includes('Mac');
 
-const statusLabel: Record<string, string> = {
-  submitted: '已提交',
-  streaming: '正在回复...',
-  ready: '就绪',
-  error: '出错',
-};
-
 defineProps<{
   platforms: PlatformMeta[];
   selectedModel: string;
   serverConnected: boolean;
-  status: string;
-  error?: Error;
 }>();
 
 const emit = defineEmits<{
@@ -82,30 +73,12 @@ async function handleDblClick(e: MouseEvent) {
         @select="emit('selectModel', $event)"
       />
 
-      <div
-        v-if="serverConnected"
-        class="flex items-center gap-1.5 text-xs"
-      >
+      <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span
           class="h-1.5 w-1.5 rounded-full shrink-0"
-          :class="{
-            'bg-blue-500': status === 'ready',
-            'bg-amber-500': status === 'submitted',
-            'bg-green-500 animate-pulse': status === 'streaming',
-            'bg-red-500': status === 'error',
-            'bg-gray-500': !status,
-          }"
+          :class="serverConnected ? 'bg-green-500' : 'bg-gray-500'"
         />
-        <span class="hidden sm:inline" :class="status === 'error' && error ? 'text-red-500' : 'text-muted-foreground'">
-          {{ status === 'error' && error ? error.message : statusLabel[status] || status }}
-        </span>
-      </div>
-      <div
-        v-else
-        class="flex items-center gap-1.5 text-xs text-muted-foreground"
-      >
-        <span class="h-1.5 w-1.5 rounded-full bg-gray-500 shrink-0" />
-        <span class="hidden sm:inline">离线</span>
+        <span class="hidden sm:inline">{{ serverConnected ? '连接' : '离线' }}</span>
       </div>
     </div>
   </header>
