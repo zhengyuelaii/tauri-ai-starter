@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PanelLeft } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
-import ModelSelector from './ModelSelector.vue';
+import ModelSelector from '../model/ModelSelector.vue';
 import { Button } from '@/components/ui/button';
 
 const statusLabel: Record<string, string> = {

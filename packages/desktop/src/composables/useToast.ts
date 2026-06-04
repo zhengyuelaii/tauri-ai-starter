@@ -9,14 +9,16 @@ export interface Toast {
 const toasts = ref<Toast[]>([]);
 let nextId = 0;
 
-export function useToast() {
-  function toast(message: string, type: Toast['type'] = 'info') {
-    const id = nextId++;
-    toasts.value.push({ id, message, type });
-    setTimeout(() => {
-      toasts.value = toasts.value.filter((t) => t.id !== id);
-    }, 4000);
-  }
+function toast(message: string, type: Toast['type'] = 'info') {
+  const id = nextId++;
+  toasts.value.push({ id, message, type });
+  setTimeout(() => {
+    toasts.value = toasts.value.filter((t) => t.id !== id);
+  }, 4000);
+}
 
+export function useToast() {
   return { toasts, toast };
 }
+
+export { toast };

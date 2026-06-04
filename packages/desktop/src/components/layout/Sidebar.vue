@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { SquarePen, Trash2, Sparkles, Settings, MoreHorizontal, Pencil } from 'lucide-vue-next';
-import SettingsDialog from './SettingsDialog.vue';
-import ConfirmDialog from './ConfirmDialog.vue';
+import SettingsDialog from '../settings/SettingsDialog.vue';
+import ConfirmDialog from '../shared/ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { PlatformMeta } from '@/types';
-import type { SessionData } from '@/api';
+import type { SessionData } from '@/types';
 
 defineProps<{
   collapsed: boolean;

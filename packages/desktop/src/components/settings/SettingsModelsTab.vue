@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { Check } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
-import { setModelEnabled } from '@/api';
+import { setModelEnabled } from '@/api/settings';
+import { toast } from '@/composables/useToast';
 
 const props = defineProps<{
   platforms: PlatformMeta[];
@@ -22,8 +23,12 @@ const enabledCount = computed(() => {
 });
 
 async function handleToggle(providerKey: string, modelId: string, enabled: boolean) {
-  await setModelEnabled(providerKey, modelId, !enabled);
-  await props.refreshPlatforms();
+  try {
+    await setModelEnabled(providerKey, modelId, !enabled);
+    await props.refreshPlatforms();
+  } catch (e: any) {
+    toast('设置失败: ' + (e?.message || '未知错误'), 'error');
+  }
 }
 </script>
 

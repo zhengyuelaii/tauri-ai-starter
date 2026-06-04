@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue';
-import type { PlatformMeta } from './types';
-import { fetchPlatforms } from './api';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useChatSession } from './composables/useChatSession';
+import { usePlatforms } from './composables/usePlatforms';
+import { useScrollToBottom } from './composables/useScrollToBottom';
 import { useToast } from './composables/useToast';
-import Sidebar from './components/Sidebar.vue';
-import AppHeader from './components/AppHeader.vue';
-import ChatMessage from './components/ChatMessage.vue';
-import ChatInput from './components/ChatInput.vue';
-import ToastProvider from './components/ToastProvider.vue';
+import { BASE_URL } from './api/constants';
+import { fetchWithTimeout } from './api/utils';
+import Sidebar from './components/layout/Sidebar.vue';
+import AppHeader from './components/layout/AppHeader.vue';
+import ChatMessage from './components/chat/ChatMessage.vue';
+import ChatInput from './components/chat/ChatInput.vue';
+import ToastProvider from './components/shared/ToastProvider.vue';
 
 const { toast } = useToast();
 const {
@@ -23,86 +25,33 @@ const {
   sendMessage,
 } = useChatSession();
 
+const {
+  platforms,
+  selectedModel,
+  enableThinking,
+  currentModel,
+  thinkingSupported,
+  providerLabel,
+  refreshPlatforms,
+  saveModelPref,
+} = usePlatforms(activeSessionId, sessions);
+
+const { messagesContainer, scrollToBottom } = useScrollToBottom(chat);
+
 const input = ref('');
-const messagesContainer = ref<HTMLElement>();
-const enableThinking = ref(false);
-const selectedModel = ref('');
-const platforms = ref<PlatformMeta[]>([]);
 const serverConnected = ref(false);
 const sidebarCollapsed = ref(false);
-
-const currentPlatform = computed(() => {
-  const [key] = selectedModel.value.split(':');
-  return platforms.value.find((p) => p.key === key);
-});
-const currentModel = computed(() => {
-  const [, id] = selectedModel.value.split(':');
-  return currentPlatform.value?.models.find((m) => m.id === id);
-});
-const thinkingSupported = computed(
-  () => currentModel.value?.supportsThinking ?? false,
-);
-const providerLabel = computed(() => currentPlatform.value?.name ?? '');
-
-async function refreshPlatforms() {
-  try {
-    const list = await fetchPlatforms();
-    platforms.value = list;
-    if (list.length > 0 && !selectedModel.value) {
-      const saved = localStorage.getItem('lastModel');
-      if (saved && list.some((p) => {
-        const [pk, mk] = saved.split(':');
-        return p.key === pk && p.models.some((m) => m.id === mk);
-      })) {
-        selectedModel.value = saved;
-      } else {
-        const p = list[0];
-        if (p && p.models.length > 0) {
-          selectedModel.value = `${p.key}:${p.models[0]!.id}`;
-        }
-      }
-    }
-  } catch {
-    // silent
-  }
-}
-
-function saveModelPref() {
-  if (selectedModel.value) {
-    localStorage.setItem('lastModel', selectedModel.value);
-  }
-}
-
-watch(activeSessionId, (id) => {
-  if (!id) {
-    const saved = localStorage.getItem('lastModel');
-    if (saved) selectedModel.value = saved;
-    return;
-  }
-  const s = sessions.value.find((s) => s.id === id);
-  if (s?.providerKey && s?.modelId) {
-    selectedModel.value = `${s.providerKey}:${s.modelId}`;
-    enableThinking.value = s.enableThinking ?? false;
-  }
-});
-
 const inputHeight = ref(0);
 
+let selectScrollId = 0;
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(async () => {
-  const baseUrl = import.meta.env.DEV
-    ? ''
-    : `http://localhost:${__SERVER_PORT__}`;
-
-  const healthController = new AbortController();
-  const healthTimeout = setTimeout(() => healthController.abort(), 5000);
-
   const results = await Promise.allSettled([
-    fetch(`${baseUrl}/health`, { signal: healthController.signal }),
+    fetchWithTimeout(`${BASE_URL}/health`, { timeout: 5000 }),
     refreshPlatforms(),
     loadSessions(),
   ]);
-
-  clearTimeout(healthTimeout);
 
   if (results[0].status === 'fulfilled' && results[0].value.ok) {
     serverConnected.value = true;
@@ -110,44 +59,19 @@ onMounted(async () => {
 
   const inputEl = document.querySelector('[data-chat-input]');
   if (inputEl) {
-    new ResizeObserver(([entry]) => {
+    resizeObserver = new ResizeObserver(([entry]) => {
       inputHeight.value = entry!.contentRect.height;
-    }).observe(inputEl);
+    });
+    resizeObserver.observe(inputEl);
   }
 });
 
-const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop =
-        messagesContainer.value.scrollHeight;
-    }
-  });
-};
-
-let scrollTimer: ReturnType<typeof setInterval> | null = null;
-
-watch(
-  () => chat.value.status,
-  (status) => {
-    if (status === 'streaming') {
-      if (!scrollTimer) {
-        scrollTimer = setInterval(scrollToBottom, 100);
-      }
-    } else {
-      if (scrollTimer) {
-        clearInterval(scrollTimer);
-        scrollTimer = null;
-      }
-      scrollToBottom();
-    }
-  },
-);
-
-watch(() => chat.value.messages, scrollToBottom);
-
 onUnmounted(() => {
-  if (scrollTimer) clearInterval(scrollTimer);
+  resizeObserver?.disconnect();
+});
+
+watch(() => chat.value.error, (err) => {
+  if (err) toast(err.message || '请求失败', 'error');
 });
 
 function onSend() {
@@ -181,8 +105,11 @@ async function handleRenameSession(id: string, title: string) {
 }
 
 async function handleSelectSession(id: string) {
+  const token = ++selectScrollId;
   await switchSession(id);
-  setTimeout(scrollToBottom, 50);
+  if (token === selectScrollId) {
+    setTimeout(scrollToBottom, 50);
+  }
 }
 </script>
 

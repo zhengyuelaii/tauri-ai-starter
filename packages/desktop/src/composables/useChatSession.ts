@@ -1,15 +1,20 @@
 import { Chat } from '@ai-sdk/vue';
 import { DefaultChatTransport } from 'ai';
 import { ref, shallowRef, watch, computed } from 'vue';
-import { fetchSessions, createSession, deleteSession, updateSession, fetchMessages, addMessage, generateTitle } from '@/api';
-import type { SessionData } from '@/api';
+import { fetchSessions, createSession, deleteSession, updateSession, fetchMessages, addMessage } from '@/api/sessions';
+import { generateTitle } from '@/api/chat';
+import { BASE_URL } from '@/api/constants';
+import { fetchWithTimeout } from '@/api/utils';
+import type { SessionData } from '@/types';
 import type { UIMessage } from 'ai';
+import { toast } from './useToast';
 
-const chatApiUrl = import.meta.env.DEV
-  ? '/api/chat'
-  : `http://localhost:${__SERVER_PORT__}/api/chat`;
+const chatApiUrl = `${BASE_URL}/api/chat`;
 
-const transport = new DefaultChatTransport({ api: chatApiUrl });
+const transport = new DefaultChatTransport({
+  api: chatApiUrl,
+  fetch: (url, init) => fetchWithTimeout(String(url), { ...init, timeout: 120_000 }),
+});
 
 export function useChatSession() {
   const sessions = ref<SessionData[]>([]);
@@ -28,8 +33,8 @@ export function useChatSession() {
   async function loadSessions() {
     try {
       sessions.value = await fetchSessions();
-    } catch {
-      // silent
+    } catch (e: any) {
+      toast('加载会话失败: ' + (e?.message || '未知错误'), 'error');
     }
   }
 
@@ -49,7 +54,8 @@ export function useChatSession() {
       for (const m of uiMessages) {
         savedMessageIds.add(m.id);
       }
-    } catch {
+    } catch (e: any) {
+      toast('切换会话失败: ' + (e?.message || '未知错误'), 'error');
       chat.value = new Chat({ transport });
       savedMessageIds.clear();
     }
@@ -62,8 +68,8 @@ export function useChatSession() {
       activeSessionId.value = s.id;
       chat.value = new Chat({ transport });
       savedMessageIds.clear();
-    } catch {
-      // silent
+    } catch (e: any) {
+      toast('创建会话失败: ' + (e?.message || '未知错误'), 'error');
     }
   }
 
@@ -98,7 +104,7 @@ export function useChatSession() {
         });
         savedMessageIds.add(m.id);
       } catch {
-        // silent
+        // silent — background sync, don't bother user
       }
     }
   }

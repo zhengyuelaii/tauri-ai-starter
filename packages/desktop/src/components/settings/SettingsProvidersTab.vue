@@ -9,11 +9,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { toast } from '@/composables/useToast';
 import {
   fetchSettingsProviders,
   connectProvider,
   disconnectProvider,
-} from '@/api';
+} from '@/api/settings';
 
 const props = defineProps<{
   platforms: PlatformMeta[];
@@ -37,8 +38,8 @@ async function loadProviders() {
   try {
     const res = await fetchSettingsProviders();
     providers.value = res.providers;
-  } catch {
-    // silent
+  } catch (e: any) {
+    toast('加载提供商失败: ' + (e?.message || '未知错误'), 'error');
   }
 }
 
@@ -53,8 +54,8 @@ const connect = async (key: string) => {
     await connectProvider(key, apiKeyInput.value[key]);
     apiKeyInput.value[key] = '';
     await Promise.all([loadProviders(), props.refreshPlatforms()]);
-  } catch {
-    // silent
+  } catch (e: any) {
+    toast('连接失败: ' + (e?.message || '未知错误'), 'error');
   } finally {
     connecting.value[key] = false;
   }
@@ -64,8 +65,8 @@ const disconnect = async (key: string) => {
   try {
     await disconnectProvider(key);
     await Promise.all([loadProviders(), props.refreshPlatforms()]);
-  } catch {
-    // silent
+  } catch (e: any) {
+    toast('断开失败: ' + (e?.message || '未知错误'), 'error');
   }
 };
 
