@@ -1,39 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { setLocale } from '@/composables/useLocale';
 
-const language = ref('zh');
-const colorScheme = ref('dark');
+const { t, locale } = useI18n();
+const colorScheme = 'dark';
 const version = '0.1.0';
 
 const languageOptions = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: 'English' },
+  { value: 'zh-CN', label: t('settings.chinese') },
+  { value: 'en', label: t('settings.english') },
 ];
 
 const colorSchemeOptions = [
-  { value: 'dark', label: '深色' },
-  { value: 'light', label: '浅色' },
-  { value: 'system', label: '跟随系统' },
+  { value: 'dark', label: t('settings.dark') },
+  { value: 'light', label: t('settings.light') },
+  { value: 'system', label: t('settings.system') },
 ];
 
+function onLanguageChange(value: string) {
+  setLocale(value as 'zh-CN' | 'en');
+}
 </script>
 
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <span class="text-sm">语言</span>
-      <select v-model="language" class="settings-select">
+      <span class="text-sm">{{ t('settings.language') }}</span>
+      <select :value="locale" @change="onLanguageChange(($event.target as HTMLSelectElement).value)" class="settings-select">
         <option v-for="o in languageOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-sm">配色方案</span>
-      <select v-model="colorScheme" class="settings-select">
+      <span class="text-sm">{{ t('settings.colorScheme') }}</span>
+      <select :value="colorScheme" class="settings-select">
         <option v-for="o in colorSchemeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-sm">版本</span>
+      <span class="text-sm">{{ t('settings.version') }}</span>
       <span class="text-sm text-muted-foreground">v{{ version }}</span>
     </div>
   </div>

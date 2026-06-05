@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Check, ChevronDown } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,8 @@ const selectModel = (value: string) => {
   emit('select', value);
   open.value = false;
 };
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -44,7 +47,7 @@ const selectModel = (value: string) => {
         class="gap-1.5 text-[13px] font-normal h-7"
       >
         <span class="truncate max-w-[200px]">
-          {{ currentPlatform?.name ?? '选择模型' }}
+          {{ currentPlatform?.name ?? t('model.select') }}
           <template v-if="currentModel"> / {{ currentModel.name }}</template>
         </span>
         <ChevronDown

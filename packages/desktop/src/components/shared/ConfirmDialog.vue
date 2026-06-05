@@ -8,6 +8,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 defineProps<{
   open: boolean;
@@ -29,8 +32,8 @@ const emit = defineEmits<{
         <DialogDescription>{{ description }}</DialogDescription>
       </DialogHeader>
       <DialogFooter class="gap-2 sm:justify-end">
-        <Button variant="outline" @click="emit('cancel')">取消</Button>
-        <Button variant="destructive" @click="emit('confirm')">删除</Button>
+        <Button variant="outline" @click="emit('cancel')">{{ t('confirm.cancel') }}</Button>
+        <Button variant="destructive" @click="emit('confirm')">{{ t('confirm.delete') }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

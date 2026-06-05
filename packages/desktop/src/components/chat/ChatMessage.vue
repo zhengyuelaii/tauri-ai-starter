@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isToolUIPart, getToolName } from 'ai';
 import type { UIMessage } from 'ai';
 import { Comark } from '@comark/vue';
@@ -27,12 +28,14 @@ const props = defineProps<{
   isLast?: boolean;
 }>();
 
+const { t } = useI18n();
+
 const toolStateLabel: Record<string, string> = {
-  'input-streaming': '正在输入参数...',
-  'input-available': '参数就绪',
-  'output-available': '已执行',
-  'output-error': '执行出错',
-  'approval-requested': '等待确认',
+  'input-streaming': t('message.toolState.input-streaming'),
+  'input-available': t('message.toolState.input-available'),
+  'output-available': t('message.toolState.output-available'),
+  'output-error': t('message.toolState.output-error'),
+  'approval-requested': t('message.toolState.approval-requested'),
 };
 
 const isEmpty = computed(() => {
@@ -134,11 +137,11 @@ const isToolPhase = computed(() => {
                   <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0s" />
                   <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.2s" />
                   <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.4s" />
-                  <span>思考中...</span>
+                  <span>{{ t('message.thinkingLabel') }}</span>
                 </span>
               </template>
               <template v-else>
-                <span>已思考</span>
+                <span>{{ t('message.thoughtLabel') }}</span>
               </template>
 
               <!-- Expand chevron -->
@@ -179,7 +182,7 @@ const isToolPhase = computed(() => {
             class="text-xs text-blue-400 hover:text-blue-300 mt-1 cursor-pointer"
             @click="expanded = !expanded"
           >
-            {{ expanded ? '收起' : '展开全部' }}
+            {{ expanded ? t('message.collapse') : t('message.expand') }}
           </button>
         </div>
 
@@ -198,7 +201,7 @@ const isToolPhase = computed(() => {
             <summary
               class="cursor-pointer text-sm flex items-center gap-1.5 text-muted-foreground border-b border-border pb-2"
             >
-              <span class="bg-amber-900 text-amber-300 text-xs px-1.5 py-px rounded font-medium">工具</span>
+              <span class="bg-amber-900 text-amber-300 text-xs px-1.5 py-px rounded font-medium">{{ t('message.tool') }}</span>
               {{ getToolName(part as any) || (part as any).type?.replace('tool-', '') }}
               <span class="text-muted-foreground text-xs ml-1">
                 {{ toolStateLabel[(part as any).state] || (part as any).state }}
@@ -212,7 +215,7 @@ const isToolPhase = computed(() => {
               v-if="(part as any).input"
               class="flex gap-2.5 mt-2 items-start"
             >
-              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">输入</span>
+              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">{{ t('message.input') }}</span>
               <div class="flex-1 text-xs text-muted-foreground max-h-50 overflow-y-auto whitespace-pre-wrap bg-white/10 rounded px-2 py-1">{{ JSON.stringify((part as any).input, null, 2) }}</div>
             </div>
             <hr
@@ -223,7 +226,7 @@ const isToolPhase = computed(() => {
               v-if="(part as any).output"
               class="flex gap-2.5 mt-2 items-start"
             >
-              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">输出</span>
+              <span class="shrink-0 text-xs text-muted-foreground bg-white/10 rounded px-1.5 py-0.5">{{ t('message.output') }}</span>
               <div class="flex-1 text-xs text-muted-foreground max-h-50 overflow-y-auto whitespace-pre-wrap bg-white/10 rounded px-2 py-1">{{ JSON.stringify((part as any).output, null, 2) }}</div>
             </div>
             <div
@@ -246,7 +249,7 @@ const isToolPhase = computed(() => {
           <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-3" style="animation-delay: 0.15s" />
           <span class="w-0.75 rounded-sm bg-linear-to-b from-blue-400 to-indigo-400 animate-[barGrow_1.2s_infinite] h-2" style="animation-delay: 0.3s" />
         </div>
-        <span>正在生成回复...</span>
+        <span>{{ t('message.generating') }}</span>
       </div>
     </div>
   </div>

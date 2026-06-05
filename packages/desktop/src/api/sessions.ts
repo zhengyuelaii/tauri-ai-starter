@@ -1,6 +1,7 @@
 import type { SessionData, MessageData } from '@/types';
 import { BASE_URL } from './constants';
 import { fetchWithTimeout } from './utils';
+import { i18n } from '@/composables/useLocale';
 
 export async function fetchSessions(): Promise<SessionData[]> {
   const res = await fetchWithTimeout(`${BASE_URL}/api/sessions`);
@@ -21,7 +22,7 @@ export async function createSession(body?: {
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
-    throw new Error(err.error ?? '创建会话失败');
+    throw new Error(err.error ?? i18n.global.t('api.createSessionFailed'));
   }
   return (await res.json()) as { id: string; title: string; createdAt: string; updatedAt: string };
 }
@@ -41,7 +42,7 @@ export async function deleteSession(id: string) {
   const res = await fetchWithTimeout(`${BASE_URL}/api/sessions/${id}`, { method: 'DELETE' });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
-    throw new Error(err.error ?? '删除会话失败');
+    throw new Error(err.error ?? i18n.global.t('api.deleteSessionFailed'));
   }
 }
 

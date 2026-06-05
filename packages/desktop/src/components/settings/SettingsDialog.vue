@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Settings, Server, Box } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import {
@@ -24,6 +25,7 @@ defineProps<{
   refreshPlatforms: () => Promise<void>;
 }>();
 
+const { t } = useI18n();
 const open = ref(false);
 
 function onOpenChange(value: boolean) {
@@ -38,9 +40,9 @@ function onOpenChange(value: boolean) {
 }
 
 const tabs = [
-  { id: 'general', label: '通用', icon: Settings },
-  { id: 'providers', label: '提供商', icon: Server },
-  { id: 'models', label: '模型', icon: Box },
+  { id: 'general', label: () => t('settings.general'), icon: Settings },
+  { id: 'providers', label: () => t('settings.providers'), icon: Server },
+  { id: 'models', label: () => t('settings.models'), icon: Box },
 ];
 </script>
 
@@ -51,7 +53,7 @@ const tabs = [
     </DialogTrigger>
     <DialogContent class="!max-w-xl h-[520px] flex flex-col p-0 gap-0">
       <DialogHeader class="px-6 pt-6 pb-3 shrink-0">
-        <DialogTitle>设置</DialogTitle>
+        <DialogTitle>{{ t('settings.title') }}</DialogTitle>
       </DialogHeader>
 
       <Tabs
@@ -72,7 +74,7 @@ const tabs = [
                 class="w-full justify-start gap-2.5 px-3 py-2 text-sm rounded-md data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:shadow-none text-muted-foreground hover:text-foreground"
               >
                 <component :is="t.icon" :size="16" />
-                <span>{{ t.label }}</span>
+                <span>{{ t.label() }}</span>
               </TabsTrigger>
             </TabsList>
           </div>

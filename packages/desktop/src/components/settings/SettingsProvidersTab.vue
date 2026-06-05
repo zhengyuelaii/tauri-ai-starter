@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Eye, EyeOff, Plus, Plug2, Unplug } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ import {
   connectProvider,
   disconnectProvider,
 } from '@/api/settings';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   platforms: PlatformMeta[];
@@ -39,7 +42,7 @@ async function loadProviders() {
     const res = await fetchSettingsProviders();
     providers.value = res.providers;
   } catch (e: any) {
-    toast('加载提供商失败: ' + (e?.message || '未知错误'), 'error');
+    toast(t('providers.loadFailed') + ': ' + (e?.message || t('providers.unknownError')), 'error');
   }
 }
 
@@ -55,7 +58,7 @@ const connect = async (key: string) => {
     apiKeyInput.value[key] = '';
     await Promise.all([loadProviders(), props.refreshPlatforms()]);
   } catch (e: any) {
-    toast('连接失败: ' + (e?.message || '未知错误'), 'error');
+    toast(t('providers.connectFailed') + ': ' + (e?.message || t('providers.unknownError')), 'error');
   } finally {
     connecting.value[key] = false;
   }
@@ -66,7 +69,7 @@ const disconnect = async (key: string) => {
     await disconnectProvider(key);
     await Promise.all([loadProviders(), props.refreshPlatforms()]);
   } catch (e: any) {
-    toast('断开失败: ' + (e?.message || '未知错误'), 'error');
+    toast(t('providers.disconnectFailed') + ': ' + (e?.message || t('providers.unknownError')), 'error');
   }
 };
 
@@ -86,10 +89,10 @@ onMounted(loadProviders);
     <!-- Connected section -->
     <div>
       <div class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
-        已连接供应商
+        {{ t('providers.connected') }}
       </div>
       <div v-if="connectedList.length === 0" class="text-sm text-muted-foreground py-3">
-        暂无已连接的供应商
+        {{ t('providers.noConnected') }}
       </div>
       <div class="divide-y divide-border rounded-lg bg-secondary overflow-hidden">
         <div v-for="p in connectedList" :key="p.key" class="flex items-center justify-between px-3 py-2.5">
@@ -99,7 +102,7 @@ onMounted(loadProviders);
           </div>
           <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-red-500" @click="disconnect(p.key)">
             <Unplug :size="14" class="mr-1.5" />
-            断开连接
+            {{ t('providers.disconnect') }}
           </Button>
         </div>
       </div>
@@ -108,10 +111,10 @@ onMounted(loadProviders);
     <!-- All providers -->
     <div>
       <div class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
-        全部供应商
+        {{ t('providers.all') }}
       </div>
       <div v-if="unconnectedList.length === 0" class="text-sm text-muted-foreground py-3">
-        所有供应商已连接
+        {{ t('providers.allConnected') }}
       </div>
       <div class="space-y-2">
         <Collapsible
@@ -142,7 +145,7 @@ onMounted(loadProviders);
                   <Input
                     :type="showKey[p.key] ? 'text' : 'password'"
                     v-model="apiKeyInput[p.key]"
-                    placeholder="输入 API Key"
+                    :placeholder="t('providers.apiKeyPlaceholder')"
                     class="h-8 text-sm pr-9"
                   />
                   <button
@@ -160,7 +163,7 @@ onMounted(loadProviders);
                   @click="connect(p.key)"
                 >
                   <Plus :size="14" class="mr-1.5" />
-                  {{ connecting[p.key] ? '连接中...' : '连接' }}
+                  {{ connecting[p.key] ? t('providers.connecting') : t('providers.connect') }}
                 </Button>
               </div>
             </div>

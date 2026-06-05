@@ -8,6 +8,7 @@ import { fetchWithTimeout } from '@/api/utils';
 import type { SessionData } from '@/types';
 import type { UIMessage } from 'ai';
 import { toast } from './useToast';
+import { i18n } from './useLocale';
 
 const chatApiUrl = `${BASE_URL}/api/chat`;
 
@@ -34,7 +35,7 @@ export function useChatSession() {
     try {
       sessions.value = await fetchSessions();
     } catch (e: any) {
-      toast('加载会话失败: ' + (e?.message || '未知错误'), 'error');
+      toast(i18n.global.t('session.loadFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
     }
   }
 
@@ -55,7 +56,7 @@ export function useChatSession() {
         savedMessageIds.add(m.id);
       }
     } catch (e: any) {
-      toast('切换会话失败: ' + (e?.message || '未知错误'), 'error');
+      toast(i18n.global.t('session.switchFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
       chat.value = new Chat({ transport });
       savedMessageIds.clear();
     }
@@ -69,7 +70,7 @@ export function useChatSession() {
       chat.value = new Chat({ transport });
       savedMessageIds.clear();
     } catch (e: any) {
-      toast('创建会话失败: ' + (e?.message || '未知错误'), 'error');
+      toast(i18n.global.t('session.createFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
     }
   }
 
@@ -122,7 +123,7 @@ export function useChatSession() {
   async function autoTitle(sid: string) {
     if (!sid) return;
     const session = sessions.value.find((s) => s.id === sid);
-    if (!session || session.title !== '新对话') return;
+    if (!session || session.title !== i18n.global.t('session.defaultTitle')) return;
     const firstUser = chat.value.messages.find((m) => m.role === 'user');
     if (!firstUser) return;
     const text = firstUser.parts

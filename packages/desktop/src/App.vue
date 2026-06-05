@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useChatSession } from './composables/useChatSession';
 import { usePlatforms } from './composables/usePlatforms';
 import { useScrollToBottom } from './composables/useScrollToBottom';
@@ -12,6 +13,7 @@ import ChatMessage from './components/chat/ChatMessage.vue';
 import ChatInput from './components/chat/ChatInput.vue';
 import ToastProvider from './components/shared/ToastProvider.vue';
 
+const { t } = useI18n();
 const { toast } = useToast();
 const {
   sessions,
@@ -71,7 +73,7 @@ onUnmounted(() => {
 });
 
 watch(() => chat.value.error, (err) => {
-  if (err) toast(err.message || '请求失败', 'error');
+  if (err) toast(err.message || t('chat.error'), 'error');
 });
 
 function onSend() {
@@ -94,9 +96,9 @@ function handleNewSession() {
 async function handleDeleteSession(id: string) {
   try {
     await removeSession(id);
-    toast('会话已删除', 'success');
+    toast(t('sidebar.deleteSuccess'), 'success');
   } catch {
-    toast('删除失败', 'error');
+    toast(t('sidebar.deleteFailed'), 'error');
   }
 }
 
@@ -168,7 +170,7 @@ async function handleSelectSession(id: string) {
             </svg>
           </div>
           <h2 class="text-2xl font-semibold text-foreground tracking-tight">
-            有什么我可以帮助你的？
+            {{ t('app.welcome') }}
           </h2>
           <p class="text-sm text-muted-foreground/50">
             {{ currentModel?.name ?? '' }}

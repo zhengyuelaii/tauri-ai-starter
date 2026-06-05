@@ -3,6 +3,7 @@ import type { SessionData } from '@/types';
 import type { PlatformMeta } from '@/types';
 import { fetchPlatforms } from '@/api/platforms';
 import { toast } from './useToast';
+import { i18n } from './useLocale';
 
 export function usePlatforms(
   activeSessionId: Ref<string>,
@@ -50,7 +51,7 @@ export function usePlatforms(
         }
       }
     } catch (e: any) {
-      toast('获取平台信息失败: ' + (e?.message || '未知错误'), 'error');
+      toast(i18n.global.t('providers.loadFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
     }
   }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { SquarePen, Trash2, Settings, MoreHorizontal, Pencil } from 'lucide-vue-next';
 import SettingsDialog from '../settings/SettingsDialog.vue';
 import ConfirmDialog from '../shared/ConfirmDialog.vue';
@@ -27,6 +28,8 @@ const emit = defineEmits<{
   rename: [id: string, title: string];
   new: [];
 }>();
+
+const { t } = useI18n();
 
 const hoveredId = ref<string | null>(null);
 const editingId = ref<string | null>(null);
@@ -82,14 +85,14 @@ function cancelDelete() {
         @click="emit('new')"
       >
         <SquarePen :size="16" />
-        <span>开始新对话</span>
+        <span>{{ t('sidebar.newChat') }}</span>
       </Button>
     </div>
 
     <ScrollArea class="flex-1">
       <div class="px-3 flex flex-col gap-0.5">
         <div class="text-[11px] tracking-wider text-muted-foreground/50 px-3 pt-1 pb-2 font-medium uppercase">
-          最近
+          {{ t('sidebar.recent') }}
         </div>
         <div
           v-for="s in sessions"
@@ -134,14 +137,14 @@ function cancelDelete() {
                 @click="startEdit(s.id, s.title)"
               >
                 <Pencil :size="13" />
-                <span>重命名</span>
+                <span>{{ t('sidebar.rename') }}</span>
               </button>
               <button
                 class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors duration-150"
                 @click="handleDelete(s.id)"
               >
                 <Trash2 :size="13" />
-                <span>删除</span>
+                <span>{{ t('sidebar.delete') }}</span>
               </button>
             </PopoverContent>
           </Popover>
@@ -150,7 +153,7 @@ function cancelDelete() {
           v-if="sessions.length === 0"
           class="px-3 py-10 text-center text-[13px] text-muted-foreground/50"
         >
-          暂无对话
+          {{ t('sidebar.empty') }}
         </div>
       </div>
     </ScrollArea>
@@ -163,7 +166,7 @@ function cancelDelete() {
             class="w-full justify-start gap-2.5 text-[13px] font-normal text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-lg transition-all duration-150 h-9"
           >
             <Settings :size="15" />
-            <span>设置</span>
+            <span>{{ t('sidebar.settings') }}</span>
           </Button>
         </template>
       </SettingsDialog>
@@ -173,8 +176,8 @@ function cancelDelete() {
 
   <ConfirmDialog
     :open="deleteTarget !== null"
-    title="删除会话"
-    description="确定要删除这个会话吗？此操作不可撤销。"
+    :title="t('sidebar.deleteDialogTitle')"
+    :description="t('sidebar.deleteDialogDesc')"
     @confirm="confirmDelete"
     @cancel="cancelDelete"
   />

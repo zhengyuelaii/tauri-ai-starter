@@ -1,11 +1,23 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useI18n } from 'vue-i18n';
 import { PanelLeft } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import ModelSelector from '../model/ModelSelector.vue';
 import { Button } from '@/components/ui/button';
+import { ref } from 'vue';
+import { toggleLocale } from '@/composables/useLocale';
 
+const { t, locale } = useI18n();
 const isMacOS = navigator.userAgent.includes('Mac');
+const localeSwitching = ref(false);
+
+function handleToggleLocale() {
+  if (localeSwitching.value) return;
+  localeSwitching.value = true;
+  toggleLocale();
+  setTimeout(() => { localeSwitching.value = false; }, 300);
+}
 
 defineProps<{
   platforms: PlatformMeta[];
@@ -53,7 +65,7 @@ async function handleDblClick(e: MouseEvent) {
         variant="ghost"
         size="icon"
         class="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-        title="切换侧边栏"
+        :title="t('titlebar.toggleSidebar')"
         @click="emit('toggleSidebar')"
       >
         <PanelLeft :size="18" />
@@ -78,8 +90,16 @@ async function handleDblClick(e: MouseEvent) {
           class="h-1.5 w-1.5 rounded-full shrink-0"
           :class="serverConnected ? 'bg-green-500' : 'bg-gray-500'"
         />
-        <span class="hidden sm:inline">{{ serverConnected ? '连接' : '离线' }}</span>
+        <span class="hidden sm:inline">{{ serverConnected ? t('titlebar.connected') : t('titlebar.offline') }}</span>
       </div>
+
+      <button
+        class="h-6 px-1.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer transition-colors font-medium shrink-0 disabled:opacity-40 disabled:cursor-default"
+        :disabled="localeSwitching"
+        @click.stop="handleToggleLocale"
+      >
+        {{ locale === 'zh-CN' ? 'EN' : '中' }}
+      </button>
     </div>
   </header>
 </template>

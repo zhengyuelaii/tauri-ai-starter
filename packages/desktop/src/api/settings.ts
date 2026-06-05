@@ -1,5 +1,6 @@
 import { BASE_URL } from './constants';
 import { fetchWithTimeout } from './utils';
+import { i18n } from '@/composables/useLocale';
 
 export async function fetchSettingsProviders() {
   const res = await fetchWithTimeout(`${BASE_URL}/api/settings/providers`);
@@ -26,7 +27,7 @@ export async function connectProvider(
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
-    throw new Error(err.error ?? '连接失败');
+    throw new Error(err.error ?? i18n.global.t('providers.connectFailed'));
   }
 }
 
@@ -36,7 +37,7 @@ export async function disconnectProvider(key: string) {
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
-    throw new Error(err.error ?? '断开连接失败');
+    throw new Error(err.error ?? i18n.global.t('providers.disconnectFailed'));
   }
 }
 
@@ -55,6 +56,6 @@ export async function setModelEnabled(
   );
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
-    throw new Error(err.error ?? '设置失败');
+    throw new Error(err.error ?? i18n.global.t('models.setFailed'));
   }
 }

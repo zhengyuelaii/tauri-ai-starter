@@ -57,6 +57,7 @@ cd packages/desktop/src-tauri && cargo build
 - **ChatMessage** renders markdown via Comark with KaTeX math and Shiki syntax highlighting
 - Styles use Tailwind v4 CSS-first config (`@theme inline` in `index.css`) — no `tailwind.config.js`
 - CSP is disabled (`null` in tauri.conf.json)
+- **i18n** via `vue-i18n`: locale files in `src/locales/{zh-CN,en}.json`, composable in `useLocale.ts`, strings via `useI18n().t('key')`. In plain `.ts` files (outside Vue), import `{ i18n } from '@/composables/useLocale'` and use `i18n.global.t('key')`. Add new strings to both locale JSON files with matching keys.
 
 ### Server (NestJS)
 

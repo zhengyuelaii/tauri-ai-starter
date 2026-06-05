@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import TitleBar from '@/components/layout/TitleBar.vue';
 import type { PlatformMeta } from '@/types';
+
+const { t } = useI18n();
 
 const connected = ref(true);
 
@@ -32,14 +35,14 @@ function dummyToggleSidebar() {}
       <div class="text-center space-y-3">
         <h1 class="text-xl font-semibold text-foreground">TitleBar Debug</h1>
         <p class="text-sm text-muted-foreground/60">
-          拖拽标题栏移动窗口<br />
-          双击标题栏最大化/还原
+          {{ t('debug.dragHint') }}<br />
+          {{ t('debug.maximizeHint') }}
         </p>
         <button
           class="h-6 px-2 rounded text-[11px] bg-accent/40 hover:bg-accent/60 cursor-pointer"
           @click="connected = !connected"
         >
-          {{ connected ? '离线' : '在线' }}
+          {{ connected ? t('titlebar.offline') : t('titlebar.connected') }}
         </button>
       </div>
     </div>

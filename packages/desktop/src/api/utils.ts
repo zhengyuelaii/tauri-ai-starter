@@ -1,6 +1,8 @@
+import { i18n } from '@/composables/useLocale';
+
 export class TimeoutError extends Error {
   constructor(ms: number) {
-    super(`请求超时 (${ms / 1000}s)`);
+    super(`${i18n.global.t('api.timeout')} (${ms / 1000}s)`);
     this.name = 'TimeoutError';
   }
 }

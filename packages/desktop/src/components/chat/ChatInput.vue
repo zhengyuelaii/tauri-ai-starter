@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ArrowUp, Square, Paperclip, Brain } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: string;
@@ -67,7 +70,7 @@ const isStreaming = computed(
       <textarea
         ref="textareaRef"
         v-model="localInput"
-        placeholder="发送消息..."
+        :placeholder="t('chat.placeholder')"
         :disabled="disabled || isStreaming"
         rows="1"
         class="w-full bg-transparent border-none outline-none text-gray-800 placeholder:text-gray-400 resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
@@ -87,7 +90,7 @@ const isStreaming = computed(
             @click="emit('update:enableThinking', !enableThinking)"
           >
             <Brain :size="14" />
-            <span>思考</span>
+            <span>{{ t('chat.thinking') }}</span>
           </button>
 
           <!-- Attach file (placeholder) -->
@@ -95,17 +98,17 @@ const isStreaming = computed(
             class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <Paperclip :size="14" />
-            <span>附件</span>
+            <span>{{ t('chat.attach') }}</span>
           </button>
         </div>
 
         <div class="flex items-center gap-1.5">
-          <span class="text-xs text-gray-400">Enter 发送，Shift+Enter 换行</span>
+          <span class="text-xs text-gray-400">{{ t('chat.shortcut') }}</span>
 
           <button
             v-if="isStreaming"
             class="w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer shrink-0 transition-colors"
-            title="停止生成"
+            :title="t('chat.stop')"
             @click="emit('stop')"
           >
             <Square :size="13" fill="currentColor" />
@@ -114,7 +117,7 @@ const isStreaming = computed(
             v-else
             class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center cursor-pointer shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:bg-blue-600"
             :disabled="!localInput.trim()"
-            title="发送"
+            :title="t('chat.send')"
             @click="emit('send')"
           >
             <ArrowUp :size="16" />

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Check } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import { setModelEnabled } from '@/api/settings';
 import { toast } from '@/composables/useToast';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   platforms: PlatformMeta[];
@@ -27,7 +30,7 @@ async function handleToggle(providerKey: string, modelId: string, enabled: boole
     await setModelEnabled(providerKey, modelId, !enabled);
     await props.refreshPlatforms();
   } catch (e: any) {
-    toast('设置失败: ' + (e?.message || '未知错误'), 'error');
+    toast(t('models.updateFailed') + ': ' + (e?.message || t('providers.unknownError')), 'error');
   }
 }
 </script>

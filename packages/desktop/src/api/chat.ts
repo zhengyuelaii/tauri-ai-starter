@@ -1,5 +1,6 @@
 import { BASE_URL } from './constants';
 import { fetchWithTimeout } from './utils';
+import { i18n } from '@/composables/useLocale';
 
 export async function generateTitle(
   provider: string,
@@ -12,7 +13,7 @@ export async function generateTitle(
     body: JSON.stringify({ provider, model, message }),
   });
   if (!res.ok) {
-    throw new Error('生成标题失败');
+    throw new Error(i18n.global.t('api.generateTitleFailed'));
   }
   const data = (await res.json()) as { title: string };
   return data.title;
