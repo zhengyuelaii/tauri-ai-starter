@@ -1,6 +1,7 @@
 {
   "app": {
-    "welcome": "How can I help you?"
+    "welcome": "How can I help you?",
+    "noModelHint": "Connect a model provider in Settings to start chatting"
   },
   "sidebar": {
     "newChat": "New Chat",

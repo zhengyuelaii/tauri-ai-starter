@@ -107,7 +107,6 @@ const hasModels = computed(() =>
 );
 
 function handleNewSession() {
-  if (!hasModels.value) return;
   resetToWelcome();
 }
 
@@ -201,6 +200,9 @@ async function handleSelectSession(id: string) {
             <template v-if="currentModel?.name && providerLabel"> · </template>
             {{ providerLabel }}
           </p>
+          <p v-if="!hasModels" class="text-sm text-muted-foreground/50">
+            {{ t('app.noModelHint') }}
+          </p>
         </div>
 
         <ChatMessage
@@ -218,6 +220,7 @@ async function handleSelectSession(id: string) {
       <ChatInput
         v-model="input"
         :status="chat.status"
+        :disabled="!hasModels"
         :enable-thinking="enableThinking"
         :thinking-supported="thinkingSupported"
         @send="onSend"

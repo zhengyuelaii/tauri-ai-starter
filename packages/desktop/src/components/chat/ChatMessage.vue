@@ -8,6 +8,7 @@ import highlight from '@comark/vue/plugins/highlight';
 import footnotes from '@comark/vue/plugins/footnotes';
 import math, { Math } from '@comark/vue/plugins/math';
 import githubLight from '@shikijs/themes/github-light-default';
+import githubDark from '@shikijs/themes/github-dark-default';
 import java from '@shikijs/langs/java';
 import CodeBlock from './CodeBlock.vue';
 import 'katex/dist/katex.min.css';
@@ -16,7 +17,7 @@ const plugins = [
   footnotes(),
   math(),
   highlight({
-    themes: { light: githubLight, dark: githubLight },
+    themes: { light: githubLight, dark: githubDark },
     languages: [java],
     preStyles: false,
   }),

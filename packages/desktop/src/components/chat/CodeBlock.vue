@@ -48,10 +48,9 @@ async function copy() {
 .code-block-wrapper {
   margin: 14px 0;
   border-radius: 10px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border);
   max-width: 100%;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .code-block-header {
@@ -59,18 +58,18 @@ async function copy() {
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: var(--accent);
+  border-bottom: 1px solid var(--border);
   font-size: 0.78em;
   font-weight: 500;
-  color: #656d76;
+  color: var(--muted-foreground);
   user-select: none;
 }
 
 .code-block-header button {
   background: none;
   border: none;
-  color: #656d76;
+  color: var(--muted-foreground);
   cursor: pointer;
   padding: 5px;
   border-radius: 6px;
@@ -81,14 +80,14 @@ async function copy() {
 }
 
 .code-block-header button:hover {
-  background: #d0d7de;
-  color: #24292f;
+  background: var(--border);
+  color: var(--foreground);
 }
 
 .code-block-body {
   overflow-x: auto;
   padding: 16px 20px;
-  background: #f6f8fa;
+  background: var(--accent);
 }
 
 .code-block-body pre {

@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { setLocale } from '@/composables/useLocale';
+import { mode, setTheme } from '@/composables/useTheme';
+import type { ThemeMode } from '@/composables/useTheme';
 import Select from '@/components/shared/Select.vue';
 
 const { t, locale } = useI18n();
@@ -13,13 +15,17 @@ const languageOptions = computed(() => [
 ]);
 
 const colorSchemeOptions = computed(() => [
-  { value: 'dark', label: t('settings.dark') },
   { value: 'light', label: t('settings.light') },
+  { value: 'dark', label: t('settings.dark') },
   { value: 'system', label: t('settings.system') },
 ]);
 
 function onLanguageChange(value: string) {
   setLocale(value as 'zh-CN' | 'en');
+}
+
+function onThemeChange(value: string) {
+  setTheme(value as ThemeMode);
 }
 </script>
 
@@ -31,7 +37,7 @@ function onLanguageChange(value: string) {
     </div>
     <div class="flex items-center justify-between">
       <span class="text-sm">{{ t('settings.colorScheme') }}</span>
-      <Select model-value="dark" :options="colorSchemeOptions" />
+      <Select :model-value="mode" :options="colorSchemeOptions" @update:model-value="onThemeChange" />
     </div>
     <div class="flex items-center justify-between">
       <span class="text-sm">{{ t('settings.version') }}</span>

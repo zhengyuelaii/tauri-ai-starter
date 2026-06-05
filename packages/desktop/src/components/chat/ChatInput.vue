@@ -65,7 +65,7 @@ const isStreaming = computed(
 <template>
   <div ref="rootRef" data-chat-input class="absolute bottom-0 left-0 right-0 pt-10 pb-4 bg-linear-to-t from-background from-40% to-transparent">
     <div class="max-w-5xl mx-auto px-6">
-    <div class="bg-white rounded-2xl border border-gray-200/60 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] focus-within:shadow-[0_4px_24px_rgba(59,130,246,0.12)] focus-within:hover:shadow-[0_4px_24px_rgba(59,130,246,0.12)] transition-shadow duration-300">
+    <div class="bg-background rounded-2xl border border-border/50 shadow-sm hover:shadow-md focus-within:shadow-[0_4px_24px_rgba(59,130,246,0.12)] transition-shadow duration-300">
       <!-- Top: textarea -->
       <textarea
         ref="textareaRef"
@@ -73,7 +73,7 @@ const isStreaming = computed(
         :placeholder="t('chat.placeholder')"
         :disabled="disabled || isStreaming"
         rows="1"
-        class="w-full bg-transparent border-none outline-none text-gray-800 placeholder:text-gray-400 resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
+        class="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
         @keydown="handleKeydown"
         @compositionstart="isComposing = true"
         @compositionend="isComposing = false"
@@ -86,7 +86,7 @@ const isStreaming = computed(
           <button
             v-if="thinkingSupported"
             class="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-all duration-300 cursor-pointer"
-            :class="enableThinking ? 'text-blue-600 bg-blue-50 border-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-transparent'"
+            :class="enableThinking ? 'text-primary bg-primary/10 border-primary' : 'text-muted-foreground hover:text-foreground hover:bg-accent border-transparent'"
             @click="emit('update:enableThinking', !enableThinking)"
           >
             <Brain :size="14" />
@@ -95,7 +95,7 @@ const isStreaming = computed(
 
           <!-- Attach file (placeholder) -->
           <button
-            class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
           >
             <Paperclip :size="14" />
             <span>{{ t('chat.attach') }}</span>
@@ -103,7 +103,7 @@ const isStreaming = computed(
         </div>
 
         <div class="flex items-center gap-1.5">
-          <span class="text-xs text-gray-400">{{ t('chat.shortcut') }}</span>
+          <span class="text-xs text-muted-foreground">{{ t('chat.shortcut') }}</span>
 
           <button
             v-if="isStreaming"
@@ -115,8 +115,8 @@ const isStreaming = computed(
           </button>
           <button
             v-else
-            class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center cursor-pointer shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:bg-blue-600"
-            :disabled="!localInput.trim()"
+            class="w-8 h-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center cursor-pointer shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:bg-primary"
+            :disabled="!localInput.trim() || disabled"
             :title="t('chat.send')"
             @click="emit('send')"
           >

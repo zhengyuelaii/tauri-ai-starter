@@ -1,6 +1,7 @@
 {
   "app": {
-    "welcome": "有什么我可以帮助你的？"
+    "welcome": "有什么我可以帮助你的？",
+    "noModelHint": "前往设置连接模型提供商，即可开始对话"
   },
   "sidebar": {
     "newChat": "开始新对话",

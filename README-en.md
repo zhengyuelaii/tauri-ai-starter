@@ -32,6 +32,8 @@ A development template for building AI desktop apps. Built on Tauri v2 + Vue 3 +
 - Conversation management (create, rename, delete, auto-title generation)
 - Markdown rendering (math formulas, code highlighting)
 - Thinking/deep reasoning mode toggle
+- Light/dark theme (follow system / manual toggle, Tauri native window sync)
+- i18n internationalization (中文 / English, language switcher)
 - Encrypted API key storage (AES-256-GCM)
 - macOS custom titlebar with frosted glass effect
 
@@ -86,11 +88,10 @@ pnpm tauri build
 
 ## Roadmap
 
-- [ ] i18n internationalization
-- [ ] Light/dark theme toggle
-- [ ] More model provider support
 - [ ] Session search
 - [ ] Custom system prompt
+- [ ] Image / file upload
+- [ ] More model provider support
 
 ## License
 

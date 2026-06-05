@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useI18n } from 'vue-i18n';
-import { PanelLeft, ChevronDown, Check } from 'lucide-vue-next';
+import { PanelLeft, ChevronDown, Check, Sun, Moon } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import ModelSelector from '../model/ModelSelector.vue';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { setLocale } from '@/composables/useLocale';
+import { mode, resolvedTheme, setTheme } from '@/composables/useTheme';
 
 const { t, locale } = useI18n();
 const isMacOS = navigator.userAgent.includes('Mac');
@@ -52,6 +53,14 @@ async function handleDblClick(e: MouseEvent) {
   e.preventDefault();
   await getCurrentWindow().toggleMaximize().catch(() => undefined);
 }
+
+function toggleTheme() {
+  if (mode.value === 'system') {
+    setTheme(resolvedTheme.value === 'dark' ? 'light' : 'dark');
+  } else {
+    setTheme(mode.value === 'dark' ? 'light' : 'dark');
+  }
+}
 </script>
 
 <template>
@@ -81,7 +90,7 @@ async function handleDblClick(e: MouseEvent) {
     </div>
 
     <!-- RIGHT -->
-    <div class="flex items-center justify-end min-w-0 gap-2 px-4">
+    <div class="flex items-center justify-end min-w-0 gap-1.5 px-4">
       <ModelSelector
         :platforms="platforms"
         :selected-model="selectedModel"
@@ -95,6 +104,16 @@ async function handleDblClick(e: MouseEvent) {
         />
         <span class="hidden sm:inline">{{ serverConnected ? t('titlebar.connected') : t('titlebar.offline') }}</span>
       </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        class="h-7 w-7 text-muted-foreground hover:text-foreground"
+        @click="toggleTheme"
+      >
+        <Sun v-if="resolvedTheme === 'dark'" :size="16" />
+        <Moon v-else :size="16" />
+      </Button>
 
       <Popover v-model:open="langOpen">
         <PopoverTrigger as-child>
