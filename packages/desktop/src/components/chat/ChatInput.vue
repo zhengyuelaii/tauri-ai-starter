@@ -85,8 +85,8 @@ const isStreaming = computed(
           <!-- Thinking toggle -->
           <button
             v-if="thinkingSupported"
-            class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer"
-            :class="enableThinking ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-all duration-300 cursor-pointer"
+            :class="enableThinking ? 'text-blue-600 bg-blue-50 border-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 border-transparent'"
             @click="emit('update:enableThinking', !enableThinking)"
           >
             <Brain :size="14" />
@@ -95,7 +95,7 @@ const isStreaming = computed(
 
           <!-- Attach file (placeholder) -->
           <button
-            class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <Paperclip :size="14" />
             <span>{{ t('chat.attach') }}</span>

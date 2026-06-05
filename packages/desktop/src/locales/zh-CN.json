@@ -98,6 +98,11 @@
     "deleteSessionFailed": "删除会话失败",
     "generateTitleFailed": "生成标题失败"
   },
+  "splash": {
+    "connecting": "正在连接服务...",
+    "failed": "连接失败",
+    "retry": "重试"
+  },
   "debug": {
     "dragHint": "拖拽标题栏移动窗口",
     "maximizeHint": "双击标题栏最大化/还原"

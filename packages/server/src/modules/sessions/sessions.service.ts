@@ -1,8 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { eq, desc, and, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DB_TOKEN, type AppDatabase } from '../../db';
-import { sessions, messages } from '../../db/schema';
+import { sessions, messages, modelSettings, providerConfigs } from '../../db/schema';
 import { db } from '../../db';
 import type { CreateSessionDto } from './dto/create-session.dto';
 import type { UpdateSessionDto } from './dto/update-session.dto';
@@ -26,6 +26,27 @@ export class SessionsService {
   }
 
   async createSession(dto: CreateSessionDto) {
+    if (dto.providerKey && dto.modelId) {
+      const provider = this.db
+        .select()
+        .from(providerConfigs)
+        .where(eq(providerConfigs.key, dto.providerKey))
+        .get();
+      if (!provider) {
+        throw new BadRequestException(`Provider not connected: ${dto.providerKey}`);
+      }
+
+      const modelKey = `${dto.providerKey}:${dto.modelId}`;
+      const model = this.db
+        .select()
+        .from(modelSettings)
+        .where(eq(modelSettings.id, modelKey))
+        .get();
+      if (!model || !model.enabled) {
+        throw new BadRequestException(`Model not enabled: ${modelKey}`);
+      }
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
     this.db.insert(sessions).values({

@@ -98,6 +98,11 @@
     "deleteSessionFailed": "Failed to delete session",
     "generateTitleFailed": "Failed to generate title"
   },
+  "splash": {
+    "connecting": "Connecting to server...",
+    "failed": "Connection failed",
+    "retry": "Retry"
+  },
   "debug": {
     "dragHint": "Drag the titlebar to move the window",
     "maximizeHint": "Double-click the titlebar to maximize/restore"

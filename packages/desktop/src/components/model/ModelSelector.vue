@@ -31,6 +31,10 @@ const currentModel = computed(() => {
   return currentPlatform.value?.models.find((m) => m.id === id);
 });
 
+const hasModels = computed(() =>
+  props.platforms.some((p) => p.models.some((m) => m.enabled)),
+);
+
 const selectModel = (value: string) => {
   emit('select', value);
   open.value = false;
@@ -44,6 +48,7 @@ const { t } = useI18n();
     <PopoverTrigger as-child>
       <Button
         variant="ghost"
+        :disabled="!hasModels"
         class="gap-1.5 text-[13px] font-normal h-7"
       >
         <span class="truncate max-w-[200px]">

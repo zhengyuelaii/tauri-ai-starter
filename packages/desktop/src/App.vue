@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useChatSession } from './composables/useChatSession';
 import { usePlatforms } from './composables/usePlatforms';
@@ -8,6 +8,7 @@ import { useToast } from './composables/useToast';
 import { BASE_URL } from './api/constants';
 import { fetchWithTimeout } from './api/utils';
 import Sidebar from './components/layout/Sidebar.vue';
+import SplashScreen from './components/layout/SplashScreen.vue';
 import TitleBar from './components/layout/TitleBar.vue';
 import ChatMessage from './components/chat/ChatMessage.vue';
 import ChatInput from './components/chat/ChatInput.vue';
@@ -45,10 +46,15 @@ const serverConnected = ref(false);
 const sidebarCollapsed = ref(false);
 const inputHeight = ref(0);
 
+type AppState = 'connecting' | 'connected' | 'error';
+const appState = ref<AppState>('connecting');
+
 let selectScrollId = 0;
 let resizeObserver: ResizeObserver | null = null;
 
-onMounted(async () => {
+async function connect() {
+  appState.value = 'connecting';
+
   const results = await Promise.allSettled([
     fetchWithTimeout(`${BASE_URL}/health`, { timeout: 5000 }),
     refreshPlatforms(),
@@ -57,7 +63,14 @@ onMounted(async () => {
 
   if (results[0].status === 'fulfilled' && results[0].value.ok) {
     serverConnected.value = true;
+    appState.value = 'connected';
+  } else {
+    appState.value = 'error';
   }
+}
+
+onMounted(async () => {
+  await connect();
 
   const inputEl = document.querySelector('[data-chat-input]');
   if (inputEl) {
@@ -89,7 +102,12 @@ function onSend() {
   input.value = '';
 }
 
+const hasModels = computed(() =>
+  platforms.value.some((p) => p.models.some((m) => m.enabled)),
+);
+
 function handleNewSession() {
+  if (!hasModels.value) return;
   resetToWelcome();
 }
 
@@ -116,7 +134,13 @@ async function handleSelectSession(id: string) {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-background relative">
+  <SplashScreen
+    v-if="appState !== 'connected'"
+    :status="appState === 'error' ? 'error' : 'connecting'"
+    @retry="connect()"
+  />
+
+  <div v-else class="flex flex-col h-screen bg-background relative">
     <ToastProvider />
 
     <TitleBar

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { SquarePen, Trash2, Settings, MoreHorizontal, Pencil } from 'lucide-vue-next';
 import SettingsDialog from '../settings/SettingsDialog.vue';
@@ -14,13 +14,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { PlatformMeta } from '@/types';
 import type { SessionData } from '@/types';
 
-defineProps<{
+const props = defineProps<{
   collapsed: boolean;
   sessions: SessionData[];
   activeId: string;
   platforms: PlatformMeta[];
   refreshPlatforms: () => Promise<void>;
 }>();
+
+const hasModels = computed(() =>
+  props.platforms.some((p) => p.models.some((m) => m.enabled)),
+);
 
 const emit = defineEmits<{
   select: [id: string];
@@ -81,7 +85,8 @@ function cancelDelete() {
     <div class="px-3 pt-12 pb-2">
       <Button
         variant="outline"
-        class="w-full justify-start gap-2.5 text-sm font-medium rounded-xl border-border/50 bg-accent/40 text-foreground/80 hover:text-foreground hover:bg-accent/60 hover:border-border/80 hover:shadow-sm transition-all duration-200 h-9"
+        class="w-full justify-start gap-2.5 text-sm font-medium rounded-xl border-border/50 bg-accent/40 text-foreground/80 hover:text-foreground hover:bg-accent/60 hover:border-border/80 hover:shadow-sm transition-all duration-200 h-9 disabled:opacity-30 disabled:cursor-not-allowed"
+        :disabled="!hasModels"
         @click="emit('new')"
       >
         <SquarePen :size="16" />

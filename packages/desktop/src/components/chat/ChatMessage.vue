@@ -133,12 +133,7 @@ const isToolPhase = computed(() => {
               class="cursor-pointer text-sm text-muted-foreground py-1 flex items-center gap-1.5 select-none"
             >
               <template v-if="isThinking">
-                <span class="flex items-center gap-0.5">
-                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0s" />
-                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.2s" />
-                  <span class="w-0.75 h-0.75 rounded-full bg-muted-foreground animate-[dotPulse_1.4s_ease-in-out_infinite]" style="animation-delay: 0.4s" />
-                  <span>{{ t('message.thinkingLabel') }}</span>
-                </span>
+                <span class="animate-pulse">{{ t('message.thinkingLabel') }}</span>
               </template>
               <template v-else>
                 <span>{{ t('message.thoughtLabel') }}</span>

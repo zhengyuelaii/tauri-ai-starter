@@ -24,6 +24,7 @@ pub fn run() {
             )
             .title("desktop")
             .inner_size(1280.0, 720.0)
+            .min_inner_size(640.0, 480.0)
             .center()
             .focused(true)
             .decorations(true);

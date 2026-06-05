@@ -1,23 +1,26 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useI18n } from 'vue-i18n';
-import { PanelLeft } from 'lucide-vue-next';
+import { PanelLeft, ChevronDown, Check } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import ModelSelector from '../model/ModelSelector.vue';
 import { Button } from '@/components/ui/button';
-import { ref } from 'vue';
-import { toggleLocale } from '@/composables/useLocale';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { setLocale } from '@/composables/useLocale';
 
 const { t, locale } = useI18n();
 const isMacOS = navigator.userAgent.includes('Mac');
-const localeSwitching = ref(false);
+const langOpen = ref(false);
 
-function handleToggleLocale() {
-  if (localeSwitching.value) return;
-  localeSwitching.value = true;
-  toggleLocale();
-  setTimeout(() => { localeSwitching.value = false; }, 300);
-}
+const localeOptions = [
+  { value: 'zh-CN' as const, label: '中文' },
+  { value: 'en' as const, label: 'English' },
+];
 
 defineProps<{
   platforms: PlatformMeta[];
@@ -93,13 +96,26 @@ async function handleDblClick(e: MouseEvent) {
         <span class="hidden sm:inline">{{ serverConnected ? t('titlebar.connected') : t('titlebar.offline') }}</span>
       </div>
 
-      <button
-        class="h-6 px-1.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer transition-colors font-medium shrink-0 disabled:opacity-40 disabled:cursor-default"
-        :disabled="localeSwitching"
-        @click.stop="handleToggleLocale"
-      >
-        {{ locale === 'zh-CN' ? 'EN' : '中' }}
-      </button>
+      <Popover v-model:open="langOpen">
+        <PopoverTrigger as-child>
+          <Button variant="ghost" class="gap-1 text-[13px] font-normal h-7 px-1.5">
+            <span>{{ locale === 'zh-CN' ? '中文' : 'EN' }}</span>
+            <ChevronDown :size="14" class="opacity-50 transition-transform shrink-0" :class="{ 'rotate-180': langOpen }" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" class="w-32 p-1 gap-0">
+          <button
+            v-for="opt in localeOptions"
+            :key="opt.value"
+            class="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-[13px] hover:bg-accent cursor-pointer transition-colors"
+            @click="setLocale(opt.value); langOpen = false"
+          >
+            <Check v-if="locale === opt.value" :size="14" class="shrink-0 opacity-70" />
+            <span v-else class="w-[14px] shrink-0" />
+            <span>{{ opt.label }}</span>
+          </button>
+        </PopoverContent>
+      </Popover>
     </div>
   </header>
 </template>
