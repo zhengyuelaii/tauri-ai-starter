@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { greet } from '@nativai-template/shared';
+import { greet } from '@tauri-ai-starter/shared';
 import { DEFAULT_VERSION } from '../../common/constants';
 
 @Injectable()

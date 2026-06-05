@@ -1,6 +1,6 @@
 import * as crypto from 'node:crypto';
 
-const SEED = 'nativai-template-settings-key-v1';
+const SEED = 'tauri-ai-starter-settings-key-v1';
 const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;

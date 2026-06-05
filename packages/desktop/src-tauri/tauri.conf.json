@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "nativai-template",
+  "productName": "tauri-ai-starter",
   "version": "0.1.0",
-  "identifier": "io.github.zhengyuelaii.nativai-template",
+  "identifier": "io.github.zhengyuelaii.tauri-ai-starter",
   "build": {
-    "beforeDevCommand": "pnpm --filter @nativai-template/shared build && node scripts/dev.cjs",
+    "beforeDevCommand": "pnpm --filter @tauri-ai-starter/shared build && node scripts/dev.cjs",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm --filter @nativai-template/server build:sidecar && pnpm build",
+    "beforeBuildCommand": "pnpm --filter @tauri-ai-starter/server build:sidecar && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {

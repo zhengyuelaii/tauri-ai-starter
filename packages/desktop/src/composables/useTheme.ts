@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'nativai-theme';
+const STORAGE_KEY = 'tauri-ai-starter-theme';
 const DEFAULT_MODE: ThemeMode = 'light';
 
 function getSavedMode(): ThemeMode {

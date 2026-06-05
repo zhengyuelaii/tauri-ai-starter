@@ -12,7 +12,7 @@ Tauri v2 monorepo with three packages:
 | `packages/server` | NestJS 11 + Drizzle ORM + better-sqlite3 | API backend (compiled to Tauri sidecar binary) |
 | `packages/shared` | TypeScript only | Shared types/utilities between frontend and backend |
 
-The server runs as a **Tauri sidecar** — compiled to a standalone binary via `@yao-pkg/pkg` and spawned by the Rust process at runtime. SQLite database lives at `~/.nativai-template/settings.db`.
+The server runs as a **Tauri sidecar** — compiled to a standalone binary via `@yao-pkg/pkg` and spawned by the Rust process at runtime. SQLite database lives at `~/.tauri-ai-starter/settings.db`.
 
 Frontend communicates with the NestJS backend over HTTP (`localhost:3000` in dev). In production, the sidecar is bundled in the Tauri app bundle.
 
@@ -58,7 +58,7 @@ cd packages/desktop/src-tauri && cargo build
 - Styles use Tailwind v4 CSS-first config (`@theme inline` in `index.css`) — no `tailwind.config.js`
 - CSP is disabled (`null` in tauri.conf.json)
 - **i18n** via `vue-i18n`: locale files in `src/locales/{zh-CN,en}.json`, composable in `useLocale.ts`, strings via `useI18n().t('key')`. In plain `.ts` files (outside Vue), import `{ i18n } from '@/composables/useLocale'` and use `i18n.global.t('key')`. Add new strings to both locale JSON files with matching keys.
-- **Dark mode** via `useTheme.ts` composable (module-level singleton, same pattern as `useLocale`). Three modes: `light`/`dark`/`system`, persisted to `localStorage` key `nativai-theme`. `initTheme()` called in `main.ts` before `createApp()` to avoid FOUC. `.dark` class toggled on `<html>` + `color-scheme` style for native scrollbars. Tauri native chrome synced via `getCurrentWindow().setTheme()`. System preference detected via `window.matchMedia('(prefers-color-scheme: dark)')` — do NOT use `win.theme()` (returns window theme, not system preference) or trust `onThemeChanged` payload (can fire spuriously from `setTheme()` calls). Shiki code highlighting uses dual themes (`github-light-default` + `github-dark-default`) and switches via the `.dark` CSS class.
+- **Dark mode** via `useTheme.ts` composable (module-level singleton, same pattern as `useLocale`). Three modes: `light`/`dark`/`system`, persisted to `localStorage` key `tauri-ai-starter-theme`. `initTheme()` called in `main.ts` before `createApp()` to avoid FOUC. `.dark` class toggled on `<html>` + `color-scheme` style for native scrollbars. Tauri native chrome synced via `getCurrentWindow().setTheme()`. System preference detected via `window.matchMedia('(prefers-color-scheme: dark)')` — do NOT use `win.theme()` (returns window theme, not system preference) or trust `onThemeChanged` payload (can fire spuriously from `setTheme()` calls). Shiki code highlighting uses dual themes (`github-light-default` + `github-dark-default`) and switches via the `.dark` CSS class.
 
 ### Server (NestJS)
 

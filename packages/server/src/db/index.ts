@@ -9,7 +9,7 @@ import * as schema from './schema';
 export const DB_TOKEN = Symbol('DB');
 export type AppDatabase = BetterSQLite3Database<typeof schema>;
 
-const DB_DIR = join(homedir(), '.nativai-template');
+const DB_DIR = join(homedir(), '.tauri-ai-starter');
 const DB_PATH = join(DB_DIR, 'settings.db');
 
 function ensureTables(sqlite: Database.Database) {

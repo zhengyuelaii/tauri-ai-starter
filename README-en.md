@@ -1,4 +1,4 @@
-# nativai-template
+# tauri-ai-starter
 
 [中文](README.md)
 

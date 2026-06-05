@@ -4,7 +4,7 @@ import en from '@/locales/en.json';
 
 export type Locale = 'zh-CN' | 'en';
 
-const STORAGE_KEY = 'nativai-locale';
+const STORAGE_KEY = 'tauri-ai-starter-locale';
 const DEFAULT_LOCALE: Locale = 'zh-CN';
 
 function getSavedLocale(): Locale {
