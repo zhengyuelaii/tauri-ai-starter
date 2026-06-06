@@ -4,7 +4,7 @@
 
 A development template for building AI desktop apps. Built on Tauri v2 + Vue 3 + NestJS, provides a fully functional AI Chat app with clean, extensible code.
 
-![Screenshot](docs/images/main-chat.jpg)
+![Screenshot](docs/images/main-chat.png)
 
 ## Highlights
 

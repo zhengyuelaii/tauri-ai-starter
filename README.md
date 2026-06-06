@@ -4,7 +4,7 @@
 
 快速搭建 AI 桌面应用的开发模板。基于 Tauri v2 + Vue 3 + NestJS，开箱即用的 AI Chat 应用，代码简洁，易于二次开发。
 
-![主界面](docs/images/main-chat.jpg)
+![主界面](docs/images/main-chat.png)
 
 ## 亮点
 
