@@ -65,7 +65,7 @@ const isStreaming = computed(
 <template>
   <div ref="rootRef" data-chat-input class="absolute bottom-0 left-0 right-0 pt-10 pb-4 bg-linear-to-t from-background from-40% to-transparent">
     <div class="max-w-5xl mx-auto px-6">
-    <div class="bg-background rounded-2xl border border-border/50 shadow-sm hover:shadow-md focus-within:shadow-[0_4px_24px_rgba(59,130,246,0.12)] transition-shadow duration-300">
+    <div class="bg-background rounded-2xl border border-border/50 shadow-sm hover:shadow-md focus-within:shadow-[0_4px_24px_rgba(59,130,246,0.12)] focus-within:hover:shadow-[0_4px_24px_rgba(59,130,246,0.12)] transition-shadow duration-300">
       <!-- Top: textarea -->
       <textarea
         ref="textareaRef"
