@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Eye, EyeOff, Plus, Plug2, Unplug } from 'lucide-vue-next';
+import { Eye, EyeOff, Plus, Plug2, Unplug, ChevronRight } from 'lucide-vue-next';
 import type { PlatformMeta } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,12 @@ import {
   fetchSettingsProviders,
   connectProvider,
   disconnectProvider,
+  createCustomProvider,
+  updateCustomProvider,
+  type ProviderItem,
+  type CustomProviderPayload,
 } from '@/api/settings';
+import CustomProviderDialog, { type CustomProviderData } from './CustomProviderDialog.vue';
 
 const { t } = useI18n();
 
@@ -24,18 +29,12 @@ const props = defineProps<{
   refreshPlatforms: () => Promise<void>;
 }>();
 
-interface ProviderState {
-  key: string;
-  name: string;
-  connected: boolean;
-  hasApiKey: boolean;
-  baseUrl: string | null;
-}
-
-const providers = ref<ProviderState[]>([]);
+const providers = ref<ProviderItem[]>([]);
 const showKey = ref<Record<string, boolean>>({});
 const apiKeyInput = ref<Record<string, string>>({});
 const connecting = ref<Record<string, boolean>>({});
+const customDialogOpen = ref(false);
+const editingProvider = ref<(CustomProviderData & { key: string }) | null>(null);
 
 async function loadProviders() {
   try {
@@ -77,9 +76,48 @@ const connectedList = computed(() =>
   providers.value.filter((p) => p.connected),
 );
 
-const unconnectedList = computed(() =>
-  providers.value.filter((p) => !p.connected),
+const unconnectedBuiltinList = computed(() =>
+  providers.value.filter((p) => !p.connected && !p.isCustom),
 );
+
+function openCreateDialog() {
+  editingProvider.value = null;
+  customDialogOpen.value = true;
+}
+
+function openEditDialog(p: ProviderItem) {
+  const models = props.platforms
+    .filter((pl) => pl.key === p.key)
+    .flatMap((pl) => pl.models);
+  editingProvider.value = {
+    key: p.key,
+    name: p.name,
+    baseUrl: p.baseUrl ?? '',
+    apiKey: '',
+    models,
+  };
+  customDialogOpen.value = true;
+}
+
+async function handleSave(data: CustomProviderData) {
+  try {
+    if (editingProvider.value) {
+      const payload: Partial<CustomProviderPayload> = { name: data.name, baseUrl: data.baseUrl, models: data.models };
+      if (data.apiKey) (payload as CustomProviderPayload).apiKey = data.apiKey;
+      await updateCustomProvider(editingProvider.value.key, payload);
+    } else {
+      await createCustomProvider(data as CustomProviderPayload);
+    }
+    customDialogOpen.value = false;
+    await Promise.all([loadProviders(), props.refreshPlatforms()]);
+  } catch (e: any) {
+    toast(
+      (editingProvider.value ? t('providers.updateFailed') : t('providers.createFailed')) +
+        ': ' + (e?.message || t('providers.unknownError')),
+      'error',
+    );
+  }
+}
 
 onMounted(loadProviders);
 </script>
@@ -99,26 +137,49 @@ onMounted(loadProviders);
           <div class="flex items-center gap-2">
             <Plug2 :size="14" class="text-green-500" />
             <span class="text-sm">{{ p.name }}</span>
+            <span v-if="p.isCustom" class="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">CUSTOM</span>
           </div>
-          <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-red-500" @click="disconnect(p.key)">
-            <Unplug :size="14" class="mr-1.5" />
-            {{ t('providers.disconnect') }}
-          </Button>
+          <div class="flex items-center gap-1">
+            <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-red-500" @click="disconnect(p.key)">
+              <Unplug :size="14" class="mr-1.5" />
+              {{ t('providers.disconnect') }}
+            </Button>
+            <ChevronRight
+              v-if="p.isCustom"
+              :size="16"
+              class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer -ml-0.5"
+              @click="openEditDialog(p)"
+            />
+            <ChevronRight
+              v-else
+              :size="16"
+              class="text-transparent -ml-0.5"
+            />
+          </div>
         </div>
       </div>
     </div>
 
     <!-- All providers -->
     <div>
-      <div class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-3">
-        {{ t('providers.all') }}
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+          {{ t('providers.all') }}
+        </span>
+        <Button variant="ghost" size="sm" class="h-6 text-xs" @click="openCreateDialog">
+          <Plus :size="12" class="mr-1" />
+          {{ t('providers.addCustom') }}
+        </Button>
       </div>
-      <div v-if="unconnectedList.length === 0" class="text-sm text-muted-foreground py-3">
+
+      <div v-if="unconnectedBuiltinList.length === 0" class="text-sm text-muted-foreground py-3">
         {{ t('providers.allConnected') }}
       </div>
+
+      <!-- Built-in unconnected -->
       <div class="space-y-2">
         <Collapsible
-          v-for="p in unconnectedList"
+          v-for="p in unconnectedBuiltinList"
           :key="p.key"
           :default-open="false"
         >
@@ -171,5 +232,12 @@ onMounted(loadProviders);
         </Collapsible>
       </div>
     </div>
+
+    <CustomProviderDialog
+      :open="customDialogOpen"
+      :editing="editingProvider"
+      @update:open="customDialogOpen = $event"
+      @save="handleSave"
+    />
   </div>
 </template>

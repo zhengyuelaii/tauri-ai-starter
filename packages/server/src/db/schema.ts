@@ -7,6 +7,9 @@ export const providerConfigs = sqliteTable('provider_configs', {
   iv: text('iv').notNull(),
   tag: text('tag').notNull(),
   baseUrl: text('base_url'),
+  isCustom: integer('is_custom').notNull().default(0),
+  name: text('name'),
+  modelsJson: text('models_json'),
   updatedAt: text('updated_at').notNull(),
 });
 

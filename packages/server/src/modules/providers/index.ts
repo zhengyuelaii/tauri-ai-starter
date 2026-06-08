@@ -8,10 +8,16 @@ import type {
 } from './types';
 
 export type { ThinkingOptions };
+export { modelIdFromKey } from './types';
 import { siliconflowStrategy } from './siliconflow.strategy';
 import { deepseekStrategy } from './deepseek.strategy';
 
-const strategies: PlatformStrategy[] = [siliconflowStrategy, deepseekStrategy];
+const builtinStrategies: PlatformStrategy[] = [siliconflowStrategy, deepseekStrategy];
+const customStrategies = new Map<string, PlatformStrategy>();
+
+function allStrategies(): PlatformStrategy[] {
+  return [...builtinStrategies, ...customStrategies.values()];
+}
 
 const providerCache = new Map<string, OpenAICompatibleProvider>();
 
@@ -24,11 +30,25 @@ export function clearProviderCache(key?: string): void {
 }
 
 export function getStrategy(key: string): PlatformStrategy | undefined {
-  return strategies.find((s) => s.key === key);
+  return allStrategies().find((s) => s.key === key);
 }
 
 export function getAllStrategies(): PlatformStrategy[] {
-  return strategies;
+  return allStrategies();
+}
+
+export function registerCustomStrategy(strategy: PlatformStrategy): void {
+  customStrategies.set(strategy.key, strategy);
+  clearProviderCache(strategy.key);
+}
+
+export function unregisterCustomStrategy(key: string): void {
+  customStrategies.delete(key);
+  clearProviderCache(key);
+}
+
+export function isBuiltinProvider(key: string): boolean {
+  return builtinStrategies.some((s) => s.key === key);
 }
 
 export function requireProvider(
@@ -72,7 +92,7 @@ export function getThinkingConfig(
 
 export function getPlatformsMetadata(): PlatformsMetadata {
   return {
-    platforms: strategies.map((s) => ({
+    platforms: allStrategies().map((s) => ({
       key: s.key,
       name: s.name,
       models: s.models,

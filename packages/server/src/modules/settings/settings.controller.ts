@@ -3,12 +3,17 @@ import {
   Get,
   Put,
   Delete,
+  Post,
   Body,
   Param,
 } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { ConnectProviderDto } from './dto/connect-provider.dto';
 import { SetModelEnabledDto } from './dto/set-model-enabled.dto';
+import {
+  CreateCustomProviderDto,
+  UpdateCustomProviderDto,
+} from './dto/custom-provider.dto';
 
 @Controller('api')
 export class SettingsController {
@@ -35,7 +40,27 @@ export class SettingsController {
 
   @Delete('settings/providers/:key')
   async disconnectProvider(@Param('key') key: string) {
-    await this.settingsService.disconnectProvider(key);
+    // If it's a custom provider, delete it entirely
+    try {
+      await this.settingsService.deleteCustomProvider(key);
+    } catch {
+      // Fall back to disconnect for built-in providers
+      await this.settingsService.disconnectProvider(key);
+    }
+    return { ok: true };
+  }
+
+  @Post('settings/providers')
+  async createCustomProvider(@Body() body: CreateCustomProviderDto) {
+    return this.settingsService.createCustomProvider(body);
+  }
+
+  @Put('settings/providers/:key/custom')
+  async updateCustomProvider(
+    @Param('key') key: string,
+    @Body() body: UpdateCustomProviderDto,
+  ) {
+    await this.settingsService.updateCustomProvider(key, body);
     return { ok: true };
   }
 

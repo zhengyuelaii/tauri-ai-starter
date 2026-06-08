@@ -15,6 +15,9 @@ function createTestDb(): SettingsDatabase {
       iv TEXT NOT NULL,
       tag TEXT NOT NULL,
       base_url TEXT,
+      is_custom INTEGER NOT NULL DEFAULT 0,
+      name TEXT,
+      models_json TEXT,
       updated_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS model_settings (

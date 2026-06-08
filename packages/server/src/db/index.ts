@@ -21,6 +21,9 @@ function ensureTables(sqlite: Database.Database) {
       iv TEXT NOT NULL,
       tag TEXT NOT NULL,
       base_url TEXT,
+      is_custom INTEGER NOT NULL DEFAULT 0,
+      name TEXT,
+      models_json TEXT,
       updated_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS model_settings (
@@ -62,6 +65,19 @@ function runMigrations(sqlite: Database.Database) {
   }
 }
 
+function addColumnIfMissing(sqlite: Database.Database, table: string, column: string, definition: string) {
+  const rows = sqlite.pragma(`table_info(${table})`) as Array<{ name: string }>;
+  if (!rows.some((r) => r.name === column)) {
+    sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+function migrateExisting(sqlite: Database.Database) {
+  addColumnIfMissing(sqlite, 'provider_configs', 'is_custom', 'INTEGER NOT NULL DEFAULT 0');
+  addColumnIfMissing(sqlite, 'provider_configs', 'name', 'TEXT');
+  addColumnIfMissing(sqlite, 'provider_configs', 'models_json', 'TEXT');
+}
+
 function createDb(): AppDatabase {
   mkdirSync(DB_DIR, { recursive: true });
   const sqlite = new Database(DB_PATH);
@@ -69,6 +85,7 @@ function createDb(): AppDatabase {
   sqlite.pragma('foreign_keys = ON');
   ensureTables(sqlite);
   runMigrations(sqlite);
+  migrateExisting(sqlite);
   return drizzle(sqlite, { schema });
 }
 

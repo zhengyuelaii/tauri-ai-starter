@@ -1,9 +1,18 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
 import { eq, like } from 'drizzle-orm';
 import { db, SETTINGS_DB, type SettingsDatabase } from './db';
-import { providerConfigs, modelSettings } from './db/schema';
+import { providerConfigs, modelSettings } from '../../db/schema';
 import { encrypt, decrypt, generateSalt } from './crypto';
-import { getAllStrategies, clearProviderCache } from '../providers';
+import { randomUUID } from 'node:crypto';
+import {
+  getAllStrategies,
+  clearProviderCache,
+  registerCustomStrategy,
+  unregisterCustomStrategy,
+  isBuiltinProvider,
+  modelIdFromKey,
+} from '../providers';
+import type { ModelDefinition, PlatformStrategy } from '../providers/types';
 
 export interface ProviderInfo {
   key: string;
@@ -11,6 +20,7 @@ export interface ProviderInfo {
   connected: boolean;
   hasApiKey: boolean;
   baseUrl: string | null;
+  isCustom: boolean;
 }
 
 export interface ProvidersResponse {
@@ -37,20 +47,54 @@ export interface PlatformsResponse {
 }
 
 @Injectable()
-export class SettingsService {
+export class SettingsService implements OnModuleInit {
   private readonly db: SettingsDatabase;
 
   constructor(@Inject(SETTINGS_DB) dbInstance?: SettingsDatabase) {
     this.db = dbInstance ?? db;
   }
 
+  onModuleInit() {
+    this.loadCustomStrategies();
+  }
+
+  private loadCustomStrategies() {
+    const rows = this.db
+      .select()
+      .from(providerConfigs)
+      .where(eq(providerConfigs.isCustom, 1))
+      .all();
+    for (const row of rows) {
+      registerCustomStrategy(this.buildCustomStrategy(row));
+    }
+  }
+
+  private buildCustomStrategy(row: {
+    key: string;
+    name: string | null;
+    baseUrl: string | null;
+    modelsJson: string | null;
+  }): PlatformStrategy {
+    const models: ModelDefinition[] = row.modelsJson
+      ? JSON.parse(row.modelsJson)
+      : [];
+    return {
+      key: row.key,
+      name: row.name ?? row.key,
+      defaultBaseURL: row.baseUrl ?? '',
+      models,
+      getModelId: modelIdFromKey(models),
+      configureThinking: () => ({}),
+    };
+  }
+
   async getProviders(): Promise<ProvidersResponse> {
     const strategies = getAllStrategies();
     const rows = this.db.select().from(providerConfigs).all();
-    const connectedMap = new Map(rows.map((r) => [r.key, r]));
+    const rowMap = new Map(rows.map((r) => [r.key, r]));
 
     const providers = strategies.map((s) => {
-      const cfg = connectedMap.get(s.key);
+      const cfg = rowMap.get(s.key);
       const defaultBaseUrl = s.defaultBaseURL ?? null;
 
       return {
@@ -59,6 +103,7 @@ export class SettingsService {
         connected: !!cfg,
         hasApiKey: !!cfg,
         baseUrl: cfg?.baseUrl ?? defaultBaseUrl,
+        isCustom: cfg ? cfg.isCustom === 1 : false,
       };
     });
 
@@ -120,6 +165,123 @@ export class SettingsService {
     this.db.delete(providerConfigs).where(eq(providerConfigs.key, key)).run();
     this.db.delete(modelSettings).where(like(modelSettings.id, `${key}:%`)).run();
     clearProviderCache(key);
+  }
+
+  async createCustomProvider(dto: {
+    name: string;
+    baseUrl: string;
+    apiKey: string;
+    models: ModelDefinition[];
+  }): Promise<{ key: string }> {
+    const key = `custom_${randomUUID()}`;
+    const salt = generateSalt();
+    const { encrypted, iv, tag } = encrypt(dto.apiKey, salt);
+    const now = new Date().toISOString();
+
+    this.db.insert(providerConfigs)
+      .values({
+        key,
+        apiKey: encrypted,
+        salt,
+        iv,
+        tag,
+        baseUrl: dto.baseUrl,
+        isCustom: 1,
+        name: dto.name,
+        modelsJson: JSON.stringify(dto.models),
+        updatedAt: now,
+      })
+      .run();
+
+    for (const model of dto.models) {
+      this.db.insert(modelSettings)
+        .values({ id: `${key}:${model.id}`, enabled: true, updatedAt: now })
+        .run();
+    }
+
+    const strategy = this.buildCustomStrategy({
+      key,
+      name: dto.name,
+      baseUrl: dto.baseUrl,
+      modelsJson: JSON.stringify(dto.models),
+    });
+    registerCustomStrategy(strategy);
+
+    return { key };
+  }
+
+  async updateCustomProvider(
+    key: string,
+    dto: {
+      name?: string;
+      baseUrl?: string;
+      apiKey?: string;
+      models?: ModelDefinition[];
+    },
+  ): Promise<void> {
+    const existing = this.db
+      .select()
+      .from(providerConfigs)
+      .where(eq(providerConfigs.key, key))
+      .get();
+    if (!existing) throw new Error(`Provider not found: ${key}`);
+    if (!existing.isCustom) throw new Error(`Cannot update built-in provider: ${key}`);
+
+    const set: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+
+    if (dto.name !== undefined) set.name = dto.name;
+    if (dto.baseUrl !== undefined) set.baseUrl = dto.baseUrl;
+    if (dto.models !== undefined) {
+      set.modelsJson = JSON.stringify(dto.models);
+      // Add new model_settings entries for new models
+      const now = new Date().toISOString();
+      for (const model of dto.models) {
+        this.db.insert(modelSettings)
+          .values({ id: `${key}:${model.id}`, enabled: true, updatedAt: now })
+          .onConflictDoUpdate({
+            target: modelSettings.id,
+            set: { enabled: true, updatedAt: now },
+          })
+          .run();
+      }
+    }
+
+    if (dto.apiKey !== undefined) {
+      const salt = generateSalt();
+      const { encrypted, iv, tag } = encrypt(dto.apiKey, salt);
+      set.salt = salt;
+      set.iv = iv;
+      set.tag = tag;
+      set.apiKey = encrypted;
+    }
+
+    this.db.update(providerConfigs)
+      .set(set)
+      .where(eq(providerConfigs.key, key))
+      .run();
+
+    // Rebuild and re-register strategy
+    unregisterCustomStrategy(key);
+    const updated = this.db
+      .select()
+      .from(providerConfigs)
+      .where(eq(providerConfigs.key, key))
+      .get()!;
+    registerCustomStrategy(this.buildCustomStrategy(updated));
+  }
+
+  async deleteCustomProvider(key: string): Promise<void> {
+    const existing = this.db
+      .select()
+      .from(providerConfigs)
+      .where(eq(providerConfigs.key, key))
+      .get();
+    if (!existing) throw new Error(`Provider not found: ${key}`);
+    if (!existing.isCustom) throw new Error(`Cannot delete built-in provider: ${key}`);
+
+    unregisterCustomStrategy(key);
+    this.db.delete(providerConfigs).where(eq(providerConfigs.key, key)).run();
+    this.db.delete(modelSettings).where(like(modelSettings.id, `${key}:%`)).run();
   }
 
   async setModelEnabled(

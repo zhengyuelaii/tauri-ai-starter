@@ -75,7 +75,21 @@
     "loadFailed": "Failed to load providers",
     "connectFailed": "Connection failed",
     "disconnectFailed": "Disconnect failed",
-    "unknownError": "Unknown error"
+    "createFailed": "Create failed",
+    "updateFailed": "Update failed",
+    "unknownError": "Unknown error",
+    "addCustom": "Custom Provider",
+    "customTitle": "Custom Provider",
+    "customDesc": "Custom providers use the OpenAI-compatible API format. Works with any service that supports OpenAI-compatible endpoints.",
+    "name": "Name",
+    "namePlaceholder": "Enter provider name",
+    "baseUrlPlaceholder": "https://api.example.com/v1",
+    "models": "Models",
+    "modelName": "Model Name",
+    "addModel": "Add Model",
+    "save": "Save",
+    "edit": "Edit",
+    "deleteConfirm": "Delete this custom provider?\nChat history will be kept but you won't be able to continue conversations."
   },
   "models": {
     "setFailed": "Failed to update",
