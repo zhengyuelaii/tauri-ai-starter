@@ -131,16 +131,16 @@ function cancelDelete() {
                 <MoreHorizontal :size="14" />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" class="w-36 p-1.5 rounded-xl shadow-lg border-border/60">
+            <PopoverContent align="start" class="w-36 p-1 gap-0 rounded-lg shadow-lg border-border/60">
               <button
-                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] hover:bg-accent cursor-pointer transition-colors duration-150"
+                class="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-sm hover:bg-accent cursor-pointer transition-colors duration-150"
                 @click="startEdit(s.id, s.title)"
               >
                 <Pencil :size="13" />
                 <span>{{ t('sidebar.rename') }}</span>
               </button>
               <button
-                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors duration-150"
+                class="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-sm hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors duration-150"
                 @click="handleDelete(s.id)"
               >
                 <Trash2 :size="13" />

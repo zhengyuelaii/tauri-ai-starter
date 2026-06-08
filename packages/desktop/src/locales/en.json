@@ -103,7 +103,7 @@
     "loadFailed": "Failed to load sessions",
     "switchFailed": "Failed to switch session",
     "createFailed": "Failed to create session",
-    "defaultTitle": "New Chat"
+    "defaultTitle": "New Session"
   },
   "api": {
     "timeout": "Request timeout",

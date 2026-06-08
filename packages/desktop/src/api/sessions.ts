@@ -29,7 +29,7 @@ export async function createSession(body?: {
 
 export async function updateSession(
   id: string,
-  body: { title?: string; providerKey?: string; modelId?: string; enableThinking?: boolean },
+  body: { title?: string; providerKey?: string; modelId?: string; enableThinking?: boolean; titleGenerated?: boolean },
 ) {
   await fetchWithTimeout(`${BASE_URL}/api/sessions/${id}`, {
     method: 'PATCH',

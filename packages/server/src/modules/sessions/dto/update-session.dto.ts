@@ -16,4 +16,8 @@ export class UpdateSessionDto {
   @IsBoolean()
   @IsOptional()
   enableThinking?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  titleGenerated?: boolean;
 }

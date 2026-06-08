@@ -4,8 +4,9 @@ import { HealthModule } from './modules/health';
 import { ChatModule } from './modules/chat';
 import { SettingsModule } from './modules/settings/settings.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
+import { I18nModule } from './common/i18n/i18n.module';
 
 @Module({
-  imports: [ConfigModule, HealthModule, SettingsModule, SessionsModule, ChatModule],
+  imports: [ConfigModule, I18nModule, HealthModule, SettingsModule, SessionsModule, ChatModule],
 })
 export class AppModule {}

@@ -13,6 +13,7 @@ import {
   modelIdFromKey,
 } from '../providers';
 import type { ModelDefinition, PlatformStrategy } from '../providers/types';
+import { I18nException } from '../../common/i18n/i18n.exception';
 
 export interface ProviderInfo {
   key: string;
@@ -117,7 +118,7 @@ export class SettingsService implements OnModuleInit {
   ): Promise<void> {
     const strategy = getAllStrategies().find((s) => s.key === key);
     if (!strategy) {
-      throw new Error(`Unknown platform: ${key}`);
+      throw new I18nException(400, 'errors.unknownPlatform', { key });
     }
 
     const salt = generateSalt();
@@ -165,6 +166,14 @@ export class SettingsService implements OnModuleInit {
     this.db.delete(providerConfigs).where(eq(providerConfigs.key, key)).run();
     this.db.delete(modelSettings).where(like(modelSettings.id, `${key}:%`)).run();
     clearProviderCache(key);
+  }
+
+  async removeProvider(key: string): Promise<void> {
+    if (isBuiltinProvider(key)) {
+      await this.disconnectProvider(key);
+    } else {
+      await this.deleteCustomProvider(key);
+    }
   }
 
   async createCustomProvider(dto: {
@@ -224,8 +233,8 @@ export class SettingsService implements OnModuleInit {
       .from(providerConfigs)
       .where(eq(providerConfigs.key, key))
       .get();
-    if (!existing) throw new Error(`Provider not found: ${key}`);
-    if (!existing.isCustom) throw new Error(`Cannot update built-in provider: ${key}`);
+    if (!existing) throw new I18nException(404, 'errors.providerNotFound', { key });
+    if (!existing.isCustom) throw new I18nException(400, 'errors.cannotUpdateBuiltin', { key });
 
     const set: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
@@ -276,8 +285,8 @@ export class SettingsService implements OnModuleInit {
       .from(providerConfigs)
       .where(eq(providerConfigs.key, key))
       .get();
-    if (!existing) throw new Error(`Provider not found: ${key}`);
-    if (!existing.isCustom) throw new Error(`Cannot delete built-in provider: ${key}`);
+    if (!existing) throw new I18nException(404, 'errors.providerNotFound', { key });
+    if (!existing.isCustom) throw new I18nException(400, 'errors.cannotDeleteBuiltin', { key });
 
     unregisterCustomStrategy(key);
     this.db.delete(providerConfigs).where(eq(providerConfigs.key, key)).run();

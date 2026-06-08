@@ -19,36 +19,42 @@ import {
 import type { ChatRequestDto } from './dto/chat-request.dto';
 import { SettingsService } from '../settings/settings.service';
 import { SessionsService } from '../sessions/sessions.service';
+import { I18nService } from '../../common/i18n/i18n.service';
+import { I18nException } from '../../common/i18n/i18n.exception';
+import type { ThinkingConfig } from '../providers/types';
+import type { LanguageModel } from 'ai';
+
+interface PreparedProvider {
+  model: LanguageModel;
+  thinkingConfig: ThinkingConfig;
+}
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly settingsService: SettingsService,
     private readonly sessionsService: SessionsService,
+    private readonly i18n: I18nService,
   ) {}
 
-  async streamChat(request: ChatRequestDto, res: Response) {
-    const platformKey = request.provider ?? 'siliconflow';
-    const modelKey = request.model ?? 'v4-flash';
-    const enableThinking = request.enableThinking ?? false;
-
-    // Validate and prepare before streaming
+  private async prepareProvider(
+    platformKey: string,
+    modelKey: string,
+    enableThinking: boolean,
+  ): Promise<PreparedProvider> {
     const strategy = getStrategy(platformKey);
     if (!strategy) {
-      res.status(400).json({ error: `Unknown platform: ${platformKey}` });
-      return;
+      throw new I18nException(400, 'errors.unknownPlatform', { key: platformKey });
     }
 
     const apiModelId = resolveModelId(platformKey, modelKey);
     if (!apiModelId) {
-      res.status(400).json({ error: `Unknown model "${modelKey}" for platform "${platformKey}"` });
-      return;
+      throw new I18nException(400, 'errors.unknownModel', { platform: platformKey, model: modelKey });
     }
 
     const config = await this.settingsService.getProviderConfig(platformKey);
     if (!config.apiKey) {
-      res.status(400).json({ error: `API key not configured for platform: ${platformKey}` });
-      return;
+      throw new I18nException(400, 'errors.apiKeyNotConfigured', { platform: platformKey });
     }
 
     const provider = requireProvider(platformKey, config.apiKey, config.baseUrl ?? undefined);
@@ -58,9 +64,20 @@ export class ChatService {
     if (thinkingConfig.transformRequestBody) {
       modelOpts.transformRequestBody = thinkingConfig.transformRequestBody;
     }
-    const model = provider.languageModel(apiModelId, modelOpts);
 
-    // Build messages (session history + request messages)
+    return {
+      model: provider.languageModel(apiModelId, modelOpts),
+      thinkingConfig,
+    };
+  }
+
+  async streamChat(request: ChatRequestDto, res: Response) {
+    const platformKey = request.provider ?? 'siliconflow';
+    const modelKey = request.model ?? 'v4-flash';
+    const enableThinking = request.enableThinking ?? false;
+
+    const prepared = await this.prepareProvider(platformKey, modelKey, enableThinking);
+
     let { messages } = request;
     if (request.sessionId) {
       const dbMessages = await this.sessionsService.getAllMessages(request.sessionId);
@@ -74,11 +91,11 @@ export class ChatService {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         const result = streamText({
-          model,
-          system: '你是一个专业、严谨的AI助手。请保持严肃专业的语气，不要使用任何表情符号（emoji）。回答应简洁、准确、客观。',
+          model: prepared.model,
+          system: this.i18n.t('prompts.chat', this.i18n.currentLang()),
           messages: modelMessages,
           stopWhen: stepCountIs(5),
-          providerOptions: (thinkingConfig.providerOptions ?? {}) as any,
+          providerOptions: (prepared.thinkingConfig.providerOptions ?? {}) as any,
           tools: {
             weather: tool({
               description: 'Get the weather in a location (fahrenheit)',
@@ -117,44 +134,22 @@ export class ChatService {
   }
 
   async generateTitle(provider: string, model: string, message: string) {
-    const platformKey = provider || 'siliconflow';
-    const modelKey = model || 'v4-flash';
-
-    const strategy = getStrategy(platformKey);
-    if (!strategy) {
-      throw new Error(`Unknown platform: ${platformKey}`);
-    }
-
-    const apiModelId = resolveModelId(platformKey, modelKey);
-    if (!apiModelId) {
-      throw new Error(`Unknown model "${modelKey}" for platform "${platformKey}"`);
-    }
-
-    const config = await this.settingsService.getProviderConfig(platformKey);
-    if (!config.apiKey) {
-      throw new Error(`API key not configured for platform: ${platformKey}`);
-    }
-
-    const aiProvider = requireProvider(platformKey, config.apiKey, config.baseUrl ?? undefined);
-
-    const thinkingConfig = getThinkingConfig(platformKey, { enabled: false });
-    const modelOpts: Record<string, unknown> = {};
-    if (thinkingConfig.transformRequestBody) {
-      modelOpts.transformRequestBody = thinkingConfig.transformRequestBody;
-    }
-    const langModel = aiProvider.languageModel(apiModelId, modelOpts);
+    const prepared = await this.prepareProvider(
+      provider || 'siliconflow',
+      model || 'v4-flash',
+      false,
+    );
 
     const generateOptions: Record<string, unknown> = {
-      model: langModel,
-      system: '你是一个标题生成器。根据用户的消息，生成一个简短的对话标题（4-10个字）。只返回标题本身，不要加引号、标点或任何解释。',
+      model: prepared.model,
+      system: this.i18n.t('prompts.title', this.i18n.currentLang()),
       prompt: message,
     };
-    if (thinkingConfig.providerOptions) {
-      generateOptions.providerOptions = thinkingConfig.providerOptions;
+    if (prepared.thinkingConfig.providerOptions) {
+      generateOptions.providerOptions = prepared.thinkingConfig.providerOptions;
     }
 
     const { text } = await generateText(generateOptions as any);
-
     return text.trim();
   }
 }

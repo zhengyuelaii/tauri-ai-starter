@@ -21,7 +21,6 @@ const emit = defineEmits<{
 }>();
 
 const textareaRef = ref<HTMLTextAreaElement>();
-const isComposing = ref(false);
 
 const localInput = ref(props.modelValue);
 watch(
@@ -46,7 +45,7 @@ const adjustHeight = () => {
 watch(localInput, adjustHeight);
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (isComposing.value) return;
+  if (e.isComposing || e.keyCode === 229) return;
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     if (props.status === 'streaming') {
@@ -75,8 +74,6 @@ const isStreaming = computed(
         rows="1"
         class="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground resize-none px-4 pt-3 pb-2 leading-relaxed max-h-40 disabled:opacity-60"
         @keydown="handleKeydown"
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
       />
 
       <!-- Bottom row: tools -->

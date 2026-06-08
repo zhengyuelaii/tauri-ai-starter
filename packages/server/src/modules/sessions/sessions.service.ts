@@ -1,9 +1,11 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { eq, desc, and, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DB_TOKEN, type AppDatabase } from '../../db';
 import { sessions, messages, modelSettings, providerConfigs } from '../../db/schema';
 import { db } from '../../db';
+import { I18nService } from '../../common/i18n/i18n.service';
+import { I18nException } from '../../common/i18n/i18n.exception';
 import type { CreateSessionDto } from './dto/create-session.dto';
 import type { UpdateSessionDto } from './dto/update-session.dto';
 import type { AddMessageDto } from './dto/add-message.dto';
@@ -12,7 +14,10 @@ import type { AddMessageDto } from './dto/add-message.dto';
 export class SessionsService {
   private readonly db: AppDatabase;
 
-  constructor(@Inject(DB_TOKEN) dbInstance?: AppDatabase) {
+  constructor(
+    private readonly i18n: I18nService,
+    @Inject(DB_TOKEN) dbInstance?: AppDatabase,
+  ) {
     this.db = dbInstance ?? db;
   }
 
@@ -33,7 +38,7 @@ export class SessionsService {
         .where(eq(providerConfigs.key, dto.providerKey))
         .get();
       if (!provider) {
-        throw new BadRequestException(`Provider not connected: ${dto.providerKey}`);
+        throw new I18nException(400, 'errors.providerNotConnected', { key: dto.providerKey });
       }
 
       const modelKey = `${dto.providerKey}:${dto.modelId}`;
@@ -43,22 +48,24 @@ export class SessionsService {
         .where(eq(modelSettings.id, modelKey))
         .get();
       if (!model || !model.enabled) {
-        throw new BadRequestException(`Model not enabled: ${modelKey}`);
+        throw new I18nException(400, 'errors.modelNotEnabled', { key: modelKey });
       }
     }
 
     const id = randomUUID();
     const now = new Date().toISOString();
+    const defaultTitle = this.i18n.t('session.defaultTitle', this.i18n.currentLang());
     this.db.insert(sessions).values({
       id,
-      title: dto.title ?? '新对话',
+      title: dto.title ?? defaultTitle,
       providerKey: dto.providerKey ?? null,
       modelId: dto.modelId ?? null,
       enableThinking: dto.enableThinking ?? false,
+      titleGenerated: false,
       createdAt: now,
       updatedAt: now,
     }).run();
-    return { id, title: dto.title ?? '新对话', providerKey: dto.providerKey ?? null, modelId: dto.modelId ?? null, enableThinking: dto.enableThinking ?? false, createdAt: now, updatedAt: now };
+    return { id, title: dto.title ?? defaultTitle, providerKey: dto.providerKey ?? null, modelId: dto.modelId ?? null, enableThinking: dto.enableThinking ?? false, createdAt: now, updatedAt: now };
   }
 
   async updateSession(id: string, dto: UpdateSessionDto) {
@@ -68,6 +75,7 @@ export class SessionsService {
     if (dto.providerKey !== undefined) set.providerKey = dto.providerKey;
     if (dto.modelId !== undefined) set.modelId = dto.modelId;
     if (dto.enableThinking !== undefined) set.enableThinking = dto.enableThinking;
+    if (dto.titleGenerated !== undefined) set.titleGenerated = dto.titleGenerated;
 
     this.db.update(sessions).set(set as any).where(eq(sessions.id, id)).run();
   }

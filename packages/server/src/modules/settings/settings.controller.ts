@@ -40,13 +40,7 @@ export class SettingsController {
 
   @Delete('settings/providers/:key')
   async disconnectProvider(@Param('key') key: string) {
-    // If it's a custom provider, delete it entirely
-    try {
-      await this.settingsService.deleteCustomProvider(key);
-    } catch {
-      // Fall back to disconnect for built-in providers
-      await this.settingsService.disconnectProvider(key);
-    }
+    await this.settingsService.removeProvider(key);
     return { ok: true };
   }
 

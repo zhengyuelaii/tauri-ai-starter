@@ -37,6 +37,7 @@ function ensureTables(sqlite: Database.Database) {
       provider_key TEXT,
       model_id TEXT,
       enable_thinking INTEGER NOT NULL DEFAULT 0,
+      title_generated INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -76,6 +77,7 @@ function migrateExisting(sqlite: Database.Database) {
   addColumnIfMissing(sqlite, 'provider_configs', 'is_custom', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing(sqlite, 'provider_configs', 'name', 'TEXT');
   addColumnIfMissing(sqlite, 'provider_configs', 'models_json', 'TEXT');
+  addColumnIfMissing(sqlite, 'sessions', 'title_generated', 'INTEGER NOT NULL DEFAULT 0');
 }
 
 function createDb(): AppDatabase {

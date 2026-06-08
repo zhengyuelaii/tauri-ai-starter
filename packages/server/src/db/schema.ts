@@ -25,6 +25,7 @@ export const sessions = sqliteTable('sessions', {
   providerKey: text('provider_key'),
   modelId: text('model_id'),
   enableThinking: integer('enable_thinking', { mode: 'boolean' }).notNull().default(false),
+  titleGenerated: integer('title_generated', { mode: 'boolean' }).notNull().default(false),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

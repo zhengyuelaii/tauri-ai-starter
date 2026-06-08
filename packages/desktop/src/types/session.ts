@@ -4,6 +4,7 @@ export interface SessionData {
   providerKey: string | null;
   modelId: string | null;
   enableThinking: boolean;
+  titleGenerated: boolean;
   createdAt: string;
   updatedAt: string;
 }

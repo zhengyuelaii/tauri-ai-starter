@@ -85,9 +85,12 @@ export function useChatSession() {
   }
 
   async function renameSession(id: string, title: string) {
-    await updateSession(id, { title });
+    await updateSession(id, { title, titleGenerated: true });
     const s = sessions.value.find((s) => s.id === id);
-    if (s) s.title = title;
+    if (s) {
+      s.title = title;
+      s.titleGenerated = true;
+    }
   }
 
   async function saveNewMessages() {
@@ -123,7 +126,7 @@ export function useChatSession() {
   async function autoTitle(sid: string) {
     if (!sid) return;
     const session = sessions.value.find((s) => s.id === sid);
-    if (!session || session.title !== i18n.global.t('session.defaultTitle')) return;
+    if (!session || session.titleGenerated) return;
     const firstUser = chat.value.messages.find((m) => m.role === 'user');
     if (!firstUser) return;
     const text = firstUser.parts

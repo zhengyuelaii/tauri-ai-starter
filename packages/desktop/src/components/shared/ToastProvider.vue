@@ -29,7 +29,7 @@ const iconColor: Record<string, string> = {
       <div
         v-for="t in toasts"
         :key="t.id"
-        class="pointer-events-auto flex items-start gap-2.5 bg-white border border-gray-200 border-l-[3px] rounded-lg pl-3 pr-2 py-3 shadow-lg shadow-black/10 min-w-70 max-w-95 animate-[toastSlideIn_0.25s_ease-out]"
+        class="pointer-events-auto flex items-start gap-2.5 bg-background border border-border border-l-[3px] rounded-md pl-3 pr-2 py-3 shadow-lg shadow-black/10 dark:shadow-black/30 min-w-70 max-w-95 animate-[toastSlideIn_0.25s_ease-out]"
         :class="borderColor[t.type]"
       >
         <component
@@ -38,9 +38,9 @@ const iconColor: Record<string, string> = {
           :class="iconColor[t.type]"
           class="shrink-0 mt-px"
         />
-        <span class="text-sm flex-1 text-gray-700 leading-snug">{{ t.message }}</span>
+        <span class="text-sm flex-1 text-foreground leading-snug">{{ t.message }}</span>
         <button
-          class="shrink-0 text-gray-400 hover:text-gray-600 cursor-pointer mt-px"
+          class="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer mt-px"
           @click="toasts = toasts.filter(x => x.id !== t.id)"
         >
           <X :size="14" />

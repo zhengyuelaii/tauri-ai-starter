@@ -99,7 +99,7 @@ describe('SettingsService', () => {
     it('should throw for unknown platform', async () => {
       await expect(
         service.connectProvider('unknown', 'key'),
-      ).rejects.toThrow('Unknown platform');
+      ).rejects.toThrow('errors.unknownPlatform');
     });
 
     it('should re-enable models on re-connect after disconnect', async () => {

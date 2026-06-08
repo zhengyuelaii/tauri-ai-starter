@@ -19,8 +19,13 @@ export async function fetchWithTimeout(
     fetchOptions.signal.addEventListener('abort', () => controller.abort());
   }
 
+  const headers = new Headers(fetchOptions.headers);
+  if (!headers.has('X-Language')) {
+    headers.set('X-Language', i18n.global.locale.value as string);
+  }
+
   try {
-    return await fetch(url, { ...fetchOptions, signal: controller.signal });
+    return await fetch(url, { ...fetchOptions, headers, signal: controller.signal });
   } catch (err) {
     if ((err as Error).name === 'AbortError') {
       throw new TimeoutError(timeout);

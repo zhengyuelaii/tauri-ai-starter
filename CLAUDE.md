@@ -70,6 +70,17 @@ cd packages/desktop/src-tauri && cargo build
 - **Module path**: `src/modules/<feature>/` with `dto/` subdirectory
 - Controller routes are prefixed with `/api` (except health at `/` and `/health`)
 
+### Server i18n
+
+- **Frontend sends language** via `X-Language` header (`zh-CN` or `en`), injected automatically by `fetchWithTimeout` from `i18n.global.locale.value`
+- **`I18nMiddleware`** (`common/i18n/i18n.middleware.ts`) reads the header and enters an `AsyncLocalStorage` context via `langStorage.run({ lang }, () => next())` — all downstream code can read the current language from `i18n.currentLang()`
+- **`I18nService`** (`common/i18n/i18n.service.ts`) loads locale data from `locales/{zh-CN,en}.ts` (TypeScript modules, not JSON — avoids build asset issues). Provides `t(key, lang, params?)` with dot-notation keys (`"errors.unknownPlatform"`) and `{param}` interpolation. Falls back to English if a key is missing
+- **`I18nException`** (`common/i18n/i18n.exception.ts`) extends `HttpException` with an i18n key + params. Use this instead of `throw new Error()` for any user-facing error
+- **`I18nExceptionFilter`** (`common/filters/i18n-exception.filter.ts`) is a global `@Catch()` filter registered via `APP_FILTER`. It translates `I18nException` messages using the request language, and handles `HttpException` and plain `Error` with a generic 500 fallback
+- **Prompts** (`chat.service.ts`) use `this.i18n.t('prompts.chat', this.i18n.currentLang())` to select the language-appropriate system prompt
+- **Session default title** is generated from `i18n.t('session.defaultTitle', lang)` instead of hardcoded `'新对话'` — English clients get `"New Session"`, Chinese clients get `"新对话"`
+- **Adding new translations**: add the key to both `locales/en.ts` and `locales/zh-CN.ts` (the `LocaleData` interface enforces structure), then reference via `I18nService.t()`. Error keys go under `errors.*`, prompt keys under `prompts.*`, session keys under `session.*`
+
 ### Sidecar
 
 The `build:sidecar` script compiles the NestJS server to a standalone Node.js binary placed at `packages/desktop/src-tauri/binaries/server-{target-triple}`. The binary bundles `better_sqlite3` native addon (configured in server's `package.json` under `pkg.assets`).
