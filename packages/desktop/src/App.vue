@@ -70,6 +70,11 @@ async function connect() {
 }
 
 onMounted(async () => {
+  // Show the window now that Vue is mounted (Tauri window is initially hidden)
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+    await getCurrentWindow().show();
+  } catch { /* not in Tauri */ }
   await connect();
 
   const inputEl = document.querySelector('[data-chat-input]');

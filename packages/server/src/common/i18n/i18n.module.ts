@@ -1,4 +1,4 @@
-import { Global, Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Global, Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { I18nService } from './i18n.service';
 import { I18nMiddleware } from './i18n.middleware';
@@ -14,6 +14,6 @@ import { I18nExceptionFilter } from '../filters/i18n-exception.filter';
 })
 export class I18nModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(I18nMiddleware).forRoutes('/api/*');
+    consumer.apply(I18nMiddleware).forRoutes({ path: '/api/*path', method: RequestMethod.ALL });
   }
 }

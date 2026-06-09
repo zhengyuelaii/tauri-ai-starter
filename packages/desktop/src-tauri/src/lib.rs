@@ -4,11 +4,6 @@ use tauri_plugin_shell::ShellExt;
 
 struct ServerProcess(Mutex<Option<tauri_plugin_shell::process::CommandChild>>);
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -26,7 +21,7 @@ pub fn run() {
             .inner_size(1280.0, 720.0)
             .min_inner_size(640.0, 480.0)
             .center()
-            .focused(true)
+            .visible(false)
             .decorations(true);
 
             #[cfg(target_os = "macos")]
@@ -64,8 +59,8 @@ pub fn run() {
                             }
                         });
                     }
-                    Err(e) => {
-                        eprintln!("[server] failed to spawn sidecar binary: {}", e);
+                    Err(_e) => {
+                        println!("[server] sidecar binary not found (dev mode: started by dev.cjs)");
                     }
                 },
                 Err(e) => {
@@ -73,15 +68,12 @@ pub fn run() {
                 }
             }
 
-            // Ensure window gets focus after sidecar spawn on macOS
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
                 let _ = window.set_focus();
             }
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 

@@ -7,6 +7,7 @@
   "scripts": {
     "tauri": "pnpm --filter @tauri-ai-starter/desktop tauri",
     "tauri:dev": "pnpm --filter @tauri-ai-starter/desktop tauri dev",
+    "tauri:build": "pnpm --filter @tauri-ai-starter/desktop tauri build",
     "dev": "pnpm --filter @tauri-ai-starter/shared build && node packages/desktop/scripts/dev.cjs",
     "web:dev": "pnpm --filter @tauri-ai-starter/desktop dev",
     "server:dev": "pnpm --filter @tauri-ai-starter/server start:dev",
