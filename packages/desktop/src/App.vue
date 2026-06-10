@@ -39,7 +39,7 @@ const {
   saveModelPref,
 } = usePlatforms(activeSessionId, sessions);
 
-const { messagesContainer, scrollToBottom } = useScrollToBottom(chat);
+const { scrollToBottom } = useScrollToBottom(chat);
 
 const input = ref('');
 const serverConnected = ref(false);

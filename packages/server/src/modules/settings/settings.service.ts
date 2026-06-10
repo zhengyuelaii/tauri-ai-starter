@@ -14,6 +14,7 @@ import {
 } from '../providers';
 import type { ModelDefinition, PlatformStrategy } from '../providers/types';
 import { I18nException } from '../../common/i18n/i18n.exception';
+import { ProviderValidatorService } from './provider-validator.service';
 
 export interface ProviderInfo {
   key: string;
@@ -51,7 +52,10 @@ export interface PlatformsResponse {
 export class SettingsService implements OnModuleInit {
   private readonly db: SettingsDatabase;
 
-  constructor(@Inject(SETTINGS_DB) dbInstance?: SettingsDatabase) {
+  constructor(
+    @Inject(SETTINGS_DB) dbInstance: SettingsDatabase | undefined,
+    private readonly validator: ProviderValidatorService,
+  ) {
     this.db = dbInstance ?? db;
   }
 
@@ -121,6 +125,8 @@ export class SettingsService implements OnModuleInit {
       throw new I18nException(400, 'errors.unknownPlatform', { key });
     }
 
+    await this.validator.validate(strategy.name, baseUrl || strategy.defaultBaseURL, apiKey);
+
     const salt = generateSalt();
     const { encrypted, iv, tag } = encrypt(apiKey, salt);
     const now = new Date().toISOString();
@@ -182,6 +188,8 @@ export class SettingsService implements OnModuleInit {
     apiKey: string;
     models: ModelDefinition[];
   }): Promise<{ key: string }> {
+    await this.validator.validate(dto.name, dto.baseUrl, dto.apiKey);
+
     const key = `custom_${randomUUID()}`;
     const salt = generateSalt();
     const { encrypted, iv, tag } = encrypt(dto.apiKey, salt);

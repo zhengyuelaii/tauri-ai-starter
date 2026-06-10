@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { isToolUIPart, getToolName } from 'ai';
 import type { UIMessage } from 'ai';
@@ -71,20 +71,6 @@ function isLong(text: string): boolean {
   return text.split('\n').length > 5 || text.length > 500;
 }
 
-const reasoningRef = ref<HTMLElement>();
-
-watch(
-  () =>
-    (props.message.parts.find((p: any) => p.type === 'reasoning') as any)?.text,
-  () => {
-    nextTick(() => {
-      if (reasoningRef.value) {
-        reasoningRef.value.scrollTop = reasoningRef.value.scrollHeight;
-      }
-    });
-  },
-);
-
 const isToolPhase = computed(() => {
   if (props.status !== 'streaming') return false;
   if (!props.isLast) return false;
@@ -127,7 +113,7 @@ const isToolPhase = computed(() => {
         <div v-if="part.type === 'reasoning'" class="w-full mb-2.5">
           <details
             :open="reasoningOpen"
-            class="rounded-lg overflow-hidden group"
+            class="overflow-hidden group"
             @toggle="userToggled = true"
           >
             <summary
@@ -145,7 +131,7 @@ const isToolPhase = computed(() => {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
               </span>
             </summary>
-            <div ref="reasoningRef">
+            <div class="border-l-2 border-muted-foreground/20 ml-3 pl-3">
               <div class="py-2 text-sm text-muted-foreground/80 leading-relaxed whitespace-pre-wrap">
                 {{ part.text }}
               </div>

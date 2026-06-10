@@ -23,6 +23,7 @@ interface ModelRow {
 
 const props = defineProps<{
   open: boolean;
+  saving?: boolean;
   editing?: CustomProviderData & { key: string } | null;
 }>();
 
@@ -164,8 +165,8 @@ function handleSave() {
           <Button variant="outline" size="sm" @click="emit('update:open', false)">
             {{ t('confirm.cancel') }}
           </Button>
-          <Button size="sm" :disabled="!canSave" @click="handleSave">
-            {{ t('providers.save') }}
+          <Button size="sm" :disabled="!canSave || saving" @click="handleSave">
+            {{ saving ? t('providers.connecting') : t('providers.save') }}
           </Button>
         </div>
       </div>

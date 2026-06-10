@@ -35,6 +35,7 @@ const apiKeyInput = ref<Record<string, string>>({});
 const connecting = ref<Record<string, boolean>>({});
 const customDialogOpen = ref(false);
 const editingProvider = ref<(CustomProviderData & { key: string }) | null>(null);
+const savingCustom = ref(false);
 
 async function loadProviders() {
   try {
@@ -100,6 +101,7 @@ function openEditDialog(p: ProviderItem) {
 }
 
 async function handleSave(data: CustomProviderData) {
+  savingCustom.value = true;
   try {
     if (editingProvider.value) {
       const payload: Partial<CustomProviderPayload> = { name: data.name, baseUrl: data.baseUrl, models: data.models };
@@ -116,6 +118,8 @@ async function handleSave(data: CustomProviderData) {
         ': ' + (e?.message || t('providers.unknownError')),
       'error',
     );
+  } finally {
+    savingCustom.value = false;
   }
 }
 
@@ -235,6 +239,7 @@ onMounted(loadProviders);
 
     <CustomProviderDialog
       :open="customDialogOpen"
+      :saving="savingCustom"
       :editing="editingProvider"
       @update:open="customDialogOpen = $event"
       @save="handleSave"

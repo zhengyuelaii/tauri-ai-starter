@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseSync } from 'node:sqlite';
 import { drizzle } from 'drizzle-orm/node-sqlite';
 import { SettingsService } from './settings.service';
+import { ProviderValidatorService } from './provider-validator.service';
 import { SETTINGS_DB, type SettingsDatabase } from './db';
 import * as schema from '../../db/schema';
 
@@ -52,9 +53,12 @@ describe('SettingsService', () => {
   beforeEach(async () => {
     testDb = createTestDb();
 
+    const mockValidator = { validate: jest.fn().mockResolvedValue(undefined) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SettingsService,
+        { provide: ProviderValidatorService, useValue: mockValidator },
         { provide: SETTINGS_DB, useValue: testDb },
       ],
     }).compile();
@@ -232,6 +236,133 @@ describe('SettingsService', () => {
       const config = await service.getProviderConfig('nonexistent');
       expect(config.apiKey).toBeNull();
       expect(config.baseUrl).toBeNull();
+    });
+  });
+
+  // Custom provider CRUD
+  describe('createCustomProvider', () => {
+    const customDto = {
+      name: 'My Custom',
+      baseUrl: 'https://my.api.com/v1',
+      apiKey: 'sk-custom-key',
+      models: [
+        { id: 'gpt-4', name: 'GPT-4', modelId: 'gpt-4', supportsThinking: false },
+        { id: 'gpt-4o', name: 'GPT-4o', modelId: 'gpt-4o', supportsThinking: true },
+      ],
+    };
+
+    it('should create a custom provider and return a key', async () => {
+      const result = await service.createCustomProvider(customDto);
+      expect(result.key).toMatch(/^custom_/);
+    });
+
+    it('should appear in getProviders as connected and isCustom', async () => {
+      const result = await service.createCustomProvider(customDto);
+      const providers = await service.getProviders();
+      const cp = providers.providers.find((p) => p.key === result.key);
+      expect(cp?.connected).toBe(true);
+      expect(cp?.isCustom).toBe(true);
+      expect(cp?.name).toBe('My Custom');
+    });
+
+    it('should appear in getPlatformsMetadata with models enabled', async () => {
+      const result = await service.createCustomProvider(customDto);
+      const platforms = await service.getPlatformsMetadata();
+      const cp = platforms.platforms.find((p) => p.key === result.key);
+      expect(cp?.connected).toBe(true);
+      expect(cp?.models.length).toBe(2);
+      expect(cp?.models.every((m) => m.enabled)).toBe(true);
+    });
+
+    it('should encrypt and store API key', async () => {
+      const result = await service.createCustomProvider(customDto);
+      const config = await service.getProviderConfig(result.key);
+      expect(config.apiKey).toBe('sk-custom-key');
+      expect(config.baseUrl).toBe('https://my.api.com/v1');
+    });
+  });
+
+  describe('updateCustomProvider', () => {
+    it('should update name', async () => {
+      const { key } = await service.createCustomProvider({
+        name: 'Original', baseUrl: 'https://a.com/v1', apiKey: 'sk-1', models: [],
+      });
+      await service.updateCustomProvider(key, { name: 'Renamed' });
+      const providers = await service.getProviders();
+      const cp = providers.providers.find((p) => p.key === key);
+      expect(cp?.name).toBe('Renamed');
+    });
+
+    it('should update API key', async () => {
+      const { key } = await service.createCustomProvider({
+        name: 'Test', baseUrl: 'https://a.com/v1', apiKey: 'sk-old', models: [],
+      });
+      await service.updateCustomProvider(key, { apiKey: 'sk-new' });
+      const config = await service.getProviderConfig(key);
+      expect(config.apiKey).toBe('sk-new');
+    });
+
+    it('should update models and enable new ones', async () => {
+      const { key } = await service.createCustomProvider({
+        name: 'Test', baseUrl: 'https://a.com/v1', apiKey: 'sk-1',
+        models: [{ id: 'm1', name: 'M1', modelId: 'm1', supportsThinking: false }],
+      });
+      await service.updateCustomProvider(key, {
+        models: [
+          { id: 'm1', name: 'M1', modelId: 'm1', supportsThinking: false },
+          { id: 'm2', name: 'M2', modelId: 'm2', supportsThinking: true },
+        ],
+      });
+      const platforms = await service.getPlatformsMetadata();
+      const cp = platforms.platforms.find((p) => p.key === key);
+      expect(cp?.models.length).toBe(2);
+      expect(cp?.models.every((m) => m.enabled)).toBe(true);
+    });
+
+    it('should throw for builtin provider', async () => {
+      await service.connectProvider('siliconflow', 'sk-test');
+      await expect(
+        service.updateCustomProvider('siliconflow', { name: 'Hacked' }),
+      ).rejects.toThrow('errors.cannotUpdateBuiltin');
+    });
+
+    it('should throw for nonexistent provider', async () => {
+      await expect(
+        service.updateCustomProvider('nonexistent', { name: 'Ghost' }),
+      ).rejects.toThrow('errors.providerNotFound');
+    });
+  });
+
+  describe('deleteCustomProvider', () => {
+    it('should remove provider from getProviders', async () => {
+      const { key } = await service.createCustomProvider({
+        name: 'Temp', baseUrl: 'https://a.com/v1', apiKey: 'sk-1', models: [],
+      });
+      await service.deleteCustomProvider(key);
+      const providers = await service.getProviders();
+      expect(providers.providers.find((p) => p.key === key)).toBeUndefined();
+    });
+
+    it('should remove from getPlatformsMetadata', async () => {
+      const { key } = await service.createCustomProvider({
+        name: 'Temp', baseUrl: 'https://a.com/v1', apiKey: 'sk-1', models: [],
+      });
+      await service.deleteCustomProvider(key);
+      const platforms = await service.getPlatformsMetadata();
+      expect(platforms.platforms.find((p) => p.key === key)).toBeUndefined();
+    });
+
+    it('should throw for builtin provider', async () => {
+      await service.connectProvider('siliconflow', 'sk-test');
+      await expect(
+        service.deleteCustomProvider('siliconflow'),
+      ).rejects.toThrow('errors.cannotDeleteBuiltin');
+    });
+
+    it('should throw for nonexistent provider', async () => {
+      await expect(
+        service.deleteCustomProvider('nonexistent'),
+      ).rejects.toThrow('errors.providerNotFound');
     });
   });
 });
