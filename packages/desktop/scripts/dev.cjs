@@ -4,6 +4,7 @@ const { spawn } = require("child_process");
 const children = [];
 
 function cleanup() {
+  console.log("[dev] cleaning up child processes...");
   for (const child of children) {
     try {
       child.kill("SIGTERM");
@@ -14,10 +15,17 @@ function cleanup() {
 }
 
 process.on("SIGINT", () => {
+  console.log("[dev] received SIGINT, shutting down...");
   cleanup();
   process.exit(0);
 });
 process.on("SIGTERM", () => {
+  console.log("[dev] received SIGTERM, shutting down...");
+  cleanup();
+  process.exit(0);
+});
+process.on("SIGHUP", () => {
+  console.log("[dev] received SIGHUP, shutting down...");
   cleanup();
   process.exit(0);
 });
