@@ -1,4 +1,5 @@
 import { i18n } from '@/composables/useLocale';
+import { BASE_URL } from './constants';
 
 export class TimeoutError extends Error {
   constructor(ms: number) {
@@ -8,7 +9,7 @@ export class TimeoutError extends Error {
 }
 
 export async function fetchWithTimeout(
-  url: string,
+  path: string,
   options: RequestInit & { timeout?: number } = {},
 ): Promise<Response> {
   const { timeout = 30_000, ...fetchOptions } = options;
@@ -23,6 +24,8 @@ export async function fetchWithTimeout(
   if (!headers.has('X-Language')) {
     headers.set('X-Language', i18n.global.locale.value as string);
   }
+
+  const url = import.meta.env.DEV ? path : `${BASE_URL}${path}`;
 
   try {
     return await fetch(url, { ...fetchOptions, headers, signal: controller.signal });

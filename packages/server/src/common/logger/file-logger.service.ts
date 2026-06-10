@@ -9,7 +9,6 @@ const FLUSH_INTERVAL = 5000;
 
 export class FileLogger implements LoggerService {
   private buffer: string[] = [];
-  private timer: ReturnType<typeof setInterval>;
 
   constructor() {
     mkdirSync(LOG_DIR, { recursive: true });
@@ -18,11 +17,9 @@ export class FileLogger implements LoggerService {
     const ts = new Date().toISOString();
     appendFileSync(LOG_FILE, `[${ts}] [INFO] Sidecar started\n`);
 
-    this.timer = setInterval(() => this.flush(), FLUSH_INTERVAL);
+    setInterval(() => this.flush(), FLUSH_INTERVAL);
 
     process.on('exit', () => this.flush());
-    process.on('SIGTERM', () => { this.flush(); });
-    process.on('SIGINT', () => { this.flush(); });
   }
 
   log(message: unknown, context?: string) {

@@ -5,7 +5,7 @@ import { useChatSession } from './composables/useChatSession';
 import { usePlatforms } from './composables/usePlatforms';
 import { useScrollToBottom } from './composables/useScrollToBottom';
 import { useToast } from './composables/useToast';
-import { BASE_URL } from './api/constants';
+import { setBaseUrl } from './api/constants';
 import { fetchWithTimeout } from './api/utils';
 import Sidebar from './components/layout/Sidebar.vue';
 import SplashScreen from './components/layout/SplashScreen.vue';
@@ -60,7 +60,7 @@ async function connect() {
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const results = await Promise.allSettled([
-      fetchWithTimeout(`${BASE_URL}/health`, { timeout: 5000 }),
+      fetchWithTimeout(`/health`, { timeout: 5000 }),
       refreshPlatforms(),
       loadSessions(),
     ]);
@@ -85,6 +85,16 @@ onMounted(async () => {
     const { getCurrentWindow } = await import('@tauri-apps/api/window');
     await getCurrentWindow().show();
   } catch { /* not in Tauri */ }
+
+  // In production, discover the server port dynamically via Tauri IPC
+  if (!import.meta.env.DEV) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const url = await invoke<string>('get_server_url');
+      if (url) setBaseUrl(url);
+    } catch { /* use default port from __SERVER_PORT__ */ }
+  }
+
   await connect();
 
   const inputEl = document.querySelector('[data-chat-input]');

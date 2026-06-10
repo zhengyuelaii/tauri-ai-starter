@@ -3,24 +3,21 @@ import { DefaultChatTransport } from 'ai';
 import { ref, shallowRef, watch, computed } from 'vue';
 import { fetchSessions, createSession, deleteSession, updateSession, fetchMessages, addMessage } from '@/api/sessions';
 import { generateTitle } from '@/api/chat';
-import { BASE_URL } from '@/api/constants';
 import { fetchWithTimeout } from '@/api/utils';
 import type { SessionData } from '@/types';
 import type { UIMessage } from 'ai';
 import { toast } from './useToast';
 import { i18n } from './useLocale';
 
-const chatApiUrl = `${BASE_URL}/api/chat`;
-
-const transport = new DefaultChatTransport({
-  api: chatApiUrl,
+const chatTransport = new DefaultChatTransport<UIMessage>({
+  api: `/api/chat`,
   fetch: (url, init) => fetchWithTimeout(String(url), { ...init, timeout: 120_000 }),
 });
 
 export function useChatSession() {
   const sessions = ref<SessionData[]>([]);
   const activeSessionId = ref<string>('');
-  const chat = shallowRef(new Chat({ transport }));
+  const chat = shallowRef(new Chat({ transport: chatTransport }));
   const savedMessageIds = new Set<string>();
 
   const currentSession = computed(() =>
@@ -50,14 +47,14 @@ export function useChatSession() {
         role: m.role as 'user' | 'assistant' | 'system',
         parts: m.parts as UIMessage['parts'],
       })) as UIMessage[];
-      chat.value = new Chat({ transport, messages: uiMessages });
+      chat.value = new Chat({ transport: chatTransport, messages: uiMessages });
       savedMessageIds.clear();
       for (const m of uiMessages) {
         savedMessageIds.add(m.id);
       }
     } catch (e: any) {
       toast(i18n.global.t('session.switchFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
-      chat.value = new Chat({ transport });
+      chat.value = new Chat({ transport: chatTransport });
       savedMessageIds.clear();
     }
   }
@@ -67,7 +64,7 @@ export function useChatSession() {
       const s = await createSession();
       sessions.value.unshift(s as unknown as SessionData);
       activeSessionId.value = s.id;
-      chat.value = new Chat({ transport });
+      chat.value = new Chat({ transport: chatTransport });
       savedMessageIds.clear();
     } catch (e: any) {
       toast(i18n.global.t('session.createFailed') + ': ' + (e?.message || i18n.global.t('providers.unknownError')), 'error');
@@ -78,7 +75,7 @@ export function useChatSession() {
     await deleteSession(id);
     sessions.value = sessions.value.filter((s) => s.id !== id);
     if (activeSessionId.value === id) {
-      chat.value = new Chat({ transport });
+      chat.value = new Chat({ transport: chatTransport });
       savedMessageIds.clear();
       activeSessionId.value = '';
     }
@@ -213,7 +210,7 @@ export function useChatSession() {
 
   function resetToWelcome() {
     activeSessionId.value = '';
-    chat.value = new Chat({ transport });
+    chat.value = new Chat({ transport: chatTransport });
     savedMessageIds.clear();
   }
 
