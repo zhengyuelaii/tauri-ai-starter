@@ -52,21 +52,31 @@ const appState = ref<AppState>('connecting');
 let selectScrollId = 0;
 let resizeObserver: ResizeObserver | null = null;
 
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 5000;
+
 async function connect() {
   appState.value = 'connecting';
 
-  const results = await Promise.allSettled([
-    fetchWithTimeout(`${BASE_URL}/health`, { timeout: 5000 }),
-    refreshPlatforms(),
-    loadSessions(),
-  ]);
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const results = await Promise.allSettled([
+      fetchWithTimeout(`${BASE_URL}/health`, { timeout: 5000 }),
+      refreshPlatforms(),
+      loadSessions(),
+    ]);
 
-  if (results[0].status === 'fulfilled' && results[0].value.ok) {
-    serverConnected.value = true;
-    appState.value = 'connected';
-  } else {
-    appState.value = 'error';
+    if (results[0].status === 'fulfilled' && results[0].value.ok) {
+      serverConnected.value = true;
+      appState.value = 'connected';
+      return;
+    }
+
+    if (attempt < MAX_RETRIES) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY));
+    }
   }
+
+  appState.value = 'error';
 }
 
 onMounted(async () => {

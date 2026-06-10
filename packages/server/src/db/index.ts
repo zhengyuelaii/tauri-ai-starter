@@ -1,18 +1,17 @@
 import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
+import { drizzle } from 'drizzle-orm/node-sqlite';
 import * as schema from './schema';
 
 export const DB_TOKEN = Symbol('DB');
-export type AppDatabase = BetterSQLite3Database<typeof schema>;
+export type AppDatabase = ReturnType<typeof drizzle<typeof schema>>;
 
 const DB_DIR = join(homedir(), '.tauri-ai-starter');
 const DB_PATH = join(DB_DIR, 'settings.db');
 
-function ensureTables(sqlite: Database.Database) {
+function ensureTables(sqlite: DatabaseSync) {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS provider_configs (
       key TEXT PRIMARY KEY,
@@ -51,7 +50,7 @@ function ensureTables(sqlite: Database.Database) {
   `);
 }
 
-function runMigrations(sqlite: Database.Database) {
+function runMigrations(sqlite: DatabaseSync) {
   const migrationsDir = join(dirname(__dirname), '..', 'drizzle');
   try {
     const files = readdirSync(migrationsDir)
@@ -66,14 +65,14 @@ function runMigrations(sqlite: Database.Database) {
   }
 }
 
-function addColumnIfMissing(sqlite: Database.Database, table: string, column: string, definition: string) {
-  const rows = sqlite.pragma(`table_info(${table})`) as Array<{ name: string }>;
+function addColumnIfMissing(sqlite: DatabaseSync, table: string, column: string, definition: string) {
+  const rows = sqlite.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (!rows.some((r) => r.name === column)) {
     sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
 
-function migrateExisting(sqlite: Database.Database) {
+function migrateExisting(sqlite: DatabaseSync) {
   addColumnIfMissing(sqlite, 'provider_configs', 'is_custom', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing(sqlite, 'provider_configs', 'name', 'TEXT');
   addColumnIfMissing(sqlite, 'provider_configs', 'models_json', 'TEXT');
@@ -82,13 +81,12 @@ function migrateExisting(sqlite: Database.Database) {
 
 function createDb(): AppDatabase {
   mkdirSync(DB_DIR, { recursive: true });
-  const sqlite = new Database(DB_PATH);
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
+  const sqlite = new DatabaseSync(DB_PATH, { enableForeignKeyConstraints: true });
+  sqlite.exec('PRAGMA journal_mode = WAL');
   ensureTables(sqlite);
   runMigrations(sqlite);
   migrateExisting(sqlite);
-  return drizzle(sqlite, { schema });
+  return drizzle({ client: sqlite, schema }) as unknown as AppDatabase;
 }
 
 export const db = createDb();

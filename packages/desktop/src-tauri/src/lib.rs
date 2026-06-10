@@ -34,7 +34,7 @@ pub fn run() {
                 .build()
                 .expect("failed to create main window");
 
-            match app.shell().sidecar("binaries/server") {
+            match app.shell().sidecar("server") {
                 Ok(sidecar_command) => match sidecar_command.spawn() {
                     Ok((mut rx, child)) => {
                         *app.state::<ServerProcess>()
@@ -59,8 +59,8 @@ pub fn run() {
                             }
                         });
                     }
-                    Err(_e) => {
-                        println!("[server] sidecar binary not found (dev mode: started by dev.cjs)");
+                    Err(e) => {
+                        eprintln!("[server] sidecar spawn failed: {} (skipping)", e);
                     }
                 },
                 Err(e) => {

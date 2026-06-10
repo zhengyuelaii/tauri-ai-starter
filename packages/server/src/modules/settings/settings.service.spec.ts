@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
+import { drizzle } from 'drizzle-orm/node-sqlite';
 import { SettingsService } from './settings.service';
 import { SETTINGS_DB, type SettingsDatabase } from './db';
 import * as schema from '../../db/schema';
 
 function createTestDb(): SettingsDatabase {
-  const sqlite = new Database(':memory:');
+  const sqlite = new DatabaseSync(':memory:', { enableForeignKeyConstraints: true });
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS provider_configs (
       key TEXT PRIMARY KEY,
@@ -42,7 +42,7 @@ function createTestDb(): SettingsDatabase {
       created_at TEXT NOT NULL
     );
   `);
-  return drizzle(sqlite, { schema }) as unknown as SettingsDatabase;
+  return drizzle({ client: sqlite, schema }) as unknown as SettingsDatabase;
 }
 
 describe('SettingsService', () => {

@@ -16,6 +16,7 @@
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
+    "strictPropertyInitialization": false,
     "preserveWatchOutput": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,

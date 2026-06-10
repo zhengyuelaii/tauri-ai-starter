@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:sidecar": "pnpm --filter @tauri-ai-starter/shared build && tsc --project tsconfig.build.json --incremental false && node scripts/build-sidecar.js",
+    "build:sidecar": "pnpm --filter @tauri-ai-starter/shared build && tsc --project tsconfig.build.json --incremental false && node scripts/bundle.mjs && node scripts/build-sidecar.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -28,18 +28,15 @@
     "@nestjs/platform-express": "^11.0.1",
     "@tauri-ai-starter/shared": "workspace:*",
     "ai": "^6.0.193",
-    "better-sqlite3": "^12.10.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "1.0.0-rc.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^4.4.3"
   },
   "pkg": {
-    "assets": [
-      "node_modules/better-sqlite3/build/Release/better_sqlite3.node"
-    ]
+    "assets": []
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -47,13 +44,13 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",
     "@yao-pkg/pkg": "^6.20.0",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.25.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

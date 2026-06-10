@@ -30,7 +30,7 @@ if (!targetTriple) {
 }
 
 // 3. Run pkg to compile NestJS into standalone binary
-const distDir = path.join(__dirname, "..", "dist", "src");
+const distDir = path.join(__dirname, "..", "dist-bundle");
 const distBinaryDir = path.join(__dirname, "..", "dist-binary");
 fs.mkdirSync(distBinaryDir, { recursive: true });
 
@@ -40,7 +40,7 @@ const pkgOutput = path.join(distBinaryDir, binaryName);
 
 console.log(`build-sidecar: pkg target=${pkgTarget}`);
 execSync(
-  `npx pkg "${path.join(distDir, "main.js")}" --targets ${pkgTarget} --output "${pkgOutput}"`,
+  `node "${path.join(__dirname, '..', 'node_modules', '@yao-pkg', 'pkg', 'lib-es5', 'bin.js')}" "${path.join(distDir, "main.js")}" --targets ${pkgTarget} --output "${pkgOutput}"`,
   { stdio: "inherit" },
 );
 

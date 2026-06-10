@@ -2,9 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { FileLogger } from './common/logger/file-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const logger = new FileLogger();
+
+  const app = await NestFactory.create(AppModule, {
+    cors: true,
+    logger,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({ transform: true, whitelist: true }),
