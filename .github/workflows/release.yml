@@ -26,6 +26,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'packages/desktop/src-tauri -> target'
+
       - name: Build Tauri (macOS)
         uses: tauri-apps/tauri-action@v0
         env:
@@ -53,6 +57,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'packages/desktop/src-tauri -> target'
 
       - name: Build Tauri (Windows)
         uses: tauri-apps/tauri-action@v0
