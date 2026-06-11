@@ -94,7 +94,6 @@ xattr -cr /Applications/tauri-ai-starter.app
 
 Run the `.msi` installer. SmartScreen may block the first run — click "More info" → "Run anyway".
 
-> Code signing certificates require annual fees (Apple $99/yr, Windows ~hundreds of dollars/yr). Consider purchasing them for official distribution.
 
 ## Project Structure
 

@@ -94,7 +94,6 @@ xattr -cr /Applications/tauri-ai-starter.app
 
 下载 `.msi` 安装包运行。首次打开时 SmartScreen 可能会拦截，点击“更多信息” → “仍要运行”即可。
 
-> 代码签名证书需要年费（Apple $99/年，Windows 数百元/年），正式分发时建议购买。
 
 ## 项目结构
 
