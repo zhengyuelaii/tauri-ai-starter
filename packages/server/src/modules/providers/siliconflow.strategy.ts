@@ -27,21 +27,9 @@ const models: ModelDefinition[] = [
     supportsThinking: true,
   },
   {
-    id: 'nex-n2-pro',
-    name: 'Nex N2 Pro',
-    modelId: 'nex-agi/Nex-N2-Pro',
-    supportsThinking: false,
-  },
-  {
     id: 'minimax-m2.5',
     name: 'MiniMax M2.5',
     modelId: 'MiniMaxAI/MiniMax-M2.5',
-    supportsThinking: true,
-  },
-  {
-    id: 'qwen3.6-27b',
-    name: 'Qwen3.6 27B',
-    modelId: 'Qwen/Qwen3.6-27B',
     supportsThinking: true,
   },
   {

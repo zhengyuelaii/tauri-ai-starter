@@ -65,8 +65,11 @@ function toggleTheme() {
 
 <template>
   <header
-    class="h-10 shrink-0 bg-background/70 backdrop-blur-sm border-b border-border/40
-           grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center"
+    :class="[
+      'h-10 shrink-0 border-b border-border/40',
+      'grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center',
+      isMacOS ? 'bg-background/70 backdrop-blur-sm' : 'bg-background',
+    ]"
     @mousedown="handleDrag"
     @dblclick="handleDblClick"
   >
