@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm --filter @tauri-ai-starter/shared build && node scripts/dev.cjs",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm --filter @tauri-ai-starter/server build:sidecar && pnpm build",
+    "beforeBuildCommand": "pnpm --filter @tauri-ai-starter/server build:sidecar && pnpm --filter @tauri-ai-starter/desktop build",
     "frontendDist": "../dist"
   },
   "app": {
