@@ -1,97 +1,132 @@
 # tauri-ai-starter
 
-[English](README-en.md)
+English | [中文](README-zh.md)
 
-快速搭建 AI 桌面应用的开发模板。基于 Tauri v2 + Vue 3 + NestJS，开箱即用的 AI Chat 应用，代码简洁，易于二次开发。
+A development template for building AI desktop apps. Built on Tauri v2 + Vue 3 + NestJS, provides a fully functional AI Chat app with clean, extensible code.
 
-![主界面](docs/images/main-chat.png)
+![Screenshot](docs/images/main-chat.png)
 
-## 亮点
+## Highlights
 
-- **原生桌面体验** — 基于 Tauri v2（非 Electron），内存占用低，macOS 自定义标题栏 + 毛玻璃效果
-- **开箱即用** — 安装依赖即可启动，内置 AI Chat 完整功能
-- **多模型支持** — Strategy 模式接入多平台模型，支持思考/深度推理模式
-- **跨平台** — macOS / Windows / Linux 完整构建支持
-- **Sidecar 架构** — NestJS 后端编译为独立二进制文件，内置在应用包中
-- **代码简洁** — 模块化设计，Composable + DTO + Strategy 模式，易于扩展
+- **Native desktop** — Tauri v2 (not Electron), low memory footprint, macOS custom titlebar with frosted glass
+- **Works out of the box** — install dependencies and run, full AI Chat functionality included
+- **Multi-model** — Strategy pattern for multi-provider model support, with thinking/deep reasoning mode
+- **Cross-platform** — macOS / Windows / Linux build support
+- **Sidecar architecture** — NestJS backend compiled to standalone binary, bundled in the app package
+- **Clean code** — Modular design with Composable + DTO + Strategy patterns, easy to extend
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 技术 |
+| Layer | Technology |
 |---|---|
-| 桌面框架 | Tauri v2 (Rust) |
-| 前端 | Vue 3 + Vite + Tailwind CSS v4 |
-| 后端 | NestJS 11（Tauri Sidecar） |
-| 数据库 | SQLite (better-sqlite3 + Drizzle ORM) |
+| Desktop Framework | Tauri v2 (Rust) |
+| Frontend | Vue 3 + Vite + Tailwind CSS v4 |
+| Backend | NestJS 11 (Tauri Sidecar) |
+| Database | SQLite (better-sqlite3 + Drizzle ORM) |
 | AI | AI SDK (`@ai-sdk/openai-compatible`) |
-| 构建 | pnpm monorepo |
+| Build | pnpm monorepo |
 
-## 功能
+## Features
 
-- 多模型 AI 对话（流式 SSE 响应）
-- 对话历史管理（创建、重命名、删除、自动生成标题）
-- Markdown 渲染（数学公式、代码高亮）
-- 思考/深度推理模式切换
-- 明/暗主题切换（跟随系统 / 手动切换，Tauri 原生窗口同步）
-- i18n 国际化（中文 / English，语言切换器）
-- API Key 加密存储（AES-256-GCM）
-- macOS 自定义标题栏 + 毛玻璃效果
+- Multi-model AI chat (SSE streaming)
+- Conversation management (create, rename, delete, auto-title generation)
+- Markdown rendering (math formulas, code highlighting)
+- Thinking/deep reasoning mode toggle
+- Light/dark theme (follow system / manual toggle, Tauri native window sync)
+- i18n internationalization (中文 / English, language switcher)
+- Encrypted API key storage (AES-256-GCM)
+- macOS custom titlebar with frosted glass effect
 
-## 模型服务商
+## Model Providers
 
-| 服务商 | 模型 | 状态 |
+| Provider | Models | Status |
 |---|---|---|
-| SiliconFlow | DeepSeek V4 Flash、DeepSeek R1 | 已支持 |
-| DeepSeek | DeepSeek V4 Flash、DeepSeek V4 Pro | 已支持 |
-| OpenAI | GPT-4o、o4-mini 等 | 计划中 |
-| Anthropic | Claude Opus 4.x、Claude Sonnet 4.x 等 | 计划中 |
-| Google | Gemini 2.5 系列 | 计划中 |
-| Ollama | 本地部署模型 | 计划中 |
+| SiliconFlow | DeepSeek V4, Qwen3.6/3.5, Kimi K2.6, GLM 5.1, MiniMax M2.5, etc. | Supported |
+| DeepSeek | DeepSeek V4 Flash, DeepSeek V4 Pro | Supported |
+| OpenAI | GPT-4o, o4-mini, etc. | Planned |
+| Anthropic | Claude Opus 4.x, Claude Sonnet 4.x, etc. | Planned |
+| Google | Gemini 2.5 series | Planned |
+| Ollama | Local models | Planned |
 
-欢迎提 PR 贡献新的模型服务商。
+PRs welcome for new provider contributions.
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 安装依赖（需要 pnpm >= 11.4）
+# Install dependencies (requires pnpm >= 11.4)
 pnpm install
 
-# 启动桌面应用（开发模式）
+# Launch desktop app (dev mode)
 pnpm tauri:dev
 
-# 或分模块启动
-pnpm dev          # 同时启动前后端
-pnpm web:dev      # 仅前端 (http://localhost:1420)
-pnpm server:dev   # 仅后端 (http://localhost:3000)
+# Or run individually
+pnpm dev          # Start both frontend + backend
+pnpm web:dev      # Frontend only (http://localhost:1420)
+pnpm server:dev   # Backend only (http://localhost:3000)
 ```
 
-生产构建：
+Production build:
 
 ```bash
 pnpm tauri build
 ```
 
-## 项目结构
+> You need to configure a provider API key (SiliconFlow, DeepSeek, etc.) in Settings before you can send messages.
+
+## Installing Pre-built Releases
+
+Download the installer for your platform from the [Releases](https://github.com/zhengyuelaii/tauri-ai-starter/releases) page.
+
+### macOS
+
+Download the `.dmg` file and drag the app into Applications. Since the app is not yet code-signed, macOS will show a "damaged" warning on first launch.
+
+**Fix (either method works):**
+
+```bash
+# Method 1: Terminal (recommended, permanent fix)
+xattr -cr /Applications/tauri-ai-starter.app
+
+# Method 2: Right-click the app → Open → click "Open"
+```
+
+### Windows
+
+Run the `.msi` installer. SmartScreen may block the first run — click "More info" → "Run anyway".
+
+> Code signing certificates require annual fees (Apple $99/yr, Windows ~hundreds of dollars/yr). Consider purchasing them for official distribution.
+
+## Project Structure
 
 ```
 ├── packages/
-│   ├── desktop/         ← Tauri v2 + Vue 3 桌面应用
-│   │   ├── src/         # Vue 组件 / 状态管理 / API 层
-│   │   └── src-tauri/   # Rust 层（窗口管理 / Sidecar 启动）
-│   ├── server/          ← NestJS 后端（编译为 Sidecar 二进制文件）
+│   ├── desktop/         ← Tauri v2 + Vue 3 desktop app
+│   │   ├── src/         # Vue components / state management / API layer
+│   │   └── src-tauri/   # Rust layer (window management / sidecar spawn)
+│   ├── server/          ← NestJS backend (compiled to sidecar binary)
 │   │   └── src/modules/
-│   │       ├── chat/    # AI 聊天 + SSE 流式传输
-│   │       ├── sessions/# 会话 CRUD
-│   │       └── settings/# 平台 API Key 管理
-│   └── shared/          ← 共享 TypeScript 类型
+│   │       ├── chat/    # AI chat + SSE streaming
+│   │       ├── sessions/# Session CRUD
+│   │       └── settings/# Provider API key management
+│   └── shared/          ← Shared TypeScript types
 ```
 
-## 计划
+### Key Entry Points
 
-- [ ] 会话搜索
-- [ ] 自定义系统提示词
-- [ ] 图片 / 文件上传
-- [ ] 更多模型服务商接入
+| Area | File |
+|---|---|
+| Window creation / Sidecar spawn | `packages/desktop/src-tauri/src/lib.rs` |
+| Frontend entry | `packages/desktop/src/App.vue` |
+| Chat logic (SSE streaming) | `packages/server/src/modules/chat/chat.service.ts` |
+| Provider API key management | `packages/server/src/modules/settings/settings.service.ts` |
+| Add new model provider | `packages/server/src/modules/providers/` |
+
+## Roadmap
+
+- [ ] Session search
+- [ ] Custom system prompt
+- [ ] Image / file upload
+- [ ] More model provider support
 
 ## License
 

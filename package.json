@@ -1,6 +1,6 @@
 {
   "name": "tauri-ai-starter",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Desktop AI Chat app template built with Tauri v2 + Vue 3 + NestJS. Multi-model support, cross-platform, clean and extensible codebase.",
   "private": true,
   "main": "index.js",
